@@ -33,10 +33,6 @@ premailer to read and inline.
 <tr><td>
 <div class="container">
 
-  <div class="header">
-    <h1>Daily Macro Brief</h1>
-    <div class="subtitle">{{ date }} · Generated {{ generated_time }} HKT</div>
-  </div>
 
   <div class="heatmap-section">
     <img src="cid:heatmap" alt="Cross-country index heatmap">
@@ -61,7 +57,7 @@ premailer to read and inline.
   {% endfor %}
 
   <div class="footer">
-    Sources: Perplexity Finance (primary){% if any_fallback %}, yfinance / cached fallback where flagged{% endif %}.
+    Sources: Yahoo Finance & Google News (primary), FRED & TradingView (rates){% if any_fallback %}, cached fallback where flagged{% endif %}.
     Not investment advice.
   </div>
 

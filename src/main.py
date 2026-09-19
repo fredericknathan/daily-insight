@@ -93,7 +93,7 @@ def run():
     logger.info("Step 4/5: rendering heatmap")
     OUTPUT_DIR.mkdir(exist_ok=True)
     heatmap_path = str(OUTPUT_DIR / "heatmap.png")
-    render_heatmap(resolved, heatmap_path)
+    render_heatmap(resolved, countries_cfg, heatmap_path)
 
     logger.info("Step 5/5: composing + sending + archiving")
     html = build_email_html(output_countries, any_fallback)

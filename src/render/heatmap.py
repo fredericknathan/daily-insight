@@ -1,69 +1,91 @@
 """
-Cross-country index heatmap — Option A from the outline, confirmed.
-9 tiles, uniform size, coloured by % change. Simple deliberately: this
-was chosen specifically because it needs no extra data fetch (uses the
-same 9 numbers already resolved) and has zero rate-limit exposure.
+Cross-country index heatmap.
+Squarified treemap layout using fixed economic weights (to simulate volume/market cap),
+coloured by % change according to standard financial market visual constraints.
 """
 
 from __future__ import annotations
 import matplotlib
 matplotlib.use("Agg")  # headless — no display in CI
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-import numpy as np
+import squarify
 from src.fetch.resilience import ResolvedSnapshot
 
+# Proxy for "volume" / market size to ensure USA is largest, ID is smaller, etc.
+# Values roughly represent exchange market cap in USD Trillions.
+MARKET_WEIGHTS = {
+    "USA": 50.0,
+    "Japan": 6.0,
+    "Hong Kong": 4.0,
+    "Korea": 2.0,
+    "Indonesia": 0.8,
+    "Singapore": 0.6,
+    "Philippines": 0.3,
+    "Vietnam": 0.2,
+}
 
-def render_heatmap(resolved: list[ResolvedSnapshot], out_path: str) -> str:
-    """3x3 grid, ranked by |% move| (matches the brief's own ordering
-    decision) so the biggest story of the morning is also visually
-    top-left, not scattered."""
-    ranked = sorted(
-        resolved,
-        key=lambda r: abs(r.change_pct) if r.change_pct is not None else -1,
-        reverse=True,
+def get_color(change_pct: float | None) -> str:
+    if change_pct is None:
+        return "#e0e0e0" # N/A
+    if change_pct >= 3.0:
+        return "#089981" # Bright Lime/Green
+    elif change_pct >= 1.0:
+        return "#26a69a" # Medium Green
+    elif change_pct > -1.0:
+        return "#1e222d" # Neutral Muted Dark Gray
+    elif change_pct > -3.0:
+        return "#ef5350" # Medium Red
+    else:
+        return "#f23645" # Bright Crimson/Red
+
+def render_heatmap(resolved: list[ResolvedSnapshot], countries_cfg: list, out_path: str) -> str:
+    cfg_by_name = {c.name: c for c in countries_cfg}
+    
+    # Filter out unavailable
+    valid = [r for r in resolved if r.change_pct is not None]
+    if not valid:
+        # Fallback to simple plot if nothing is valid
+        fig, ax = plt.subplots(figsize=(9, 7))
+        ax.text(0.5, 0.5, "No data available", ha="center", va="center", fontsize=20)
+        ax.axis("off")
+        plt.savefig(out_path, dpi=150, bbox_inches="tight", facecolor="white")
+        plt.close(fig)
+        return out_path
+
+    # Sort by weight so larger boxes are clustered appropriately by squarify
+    valid.sort(key=lambda r: MARKET_WEIGHTS.get(r.country, 1.0), reverse=True)
+
+    sizes = [MARKET_WEIGHTS.get(r.country, 1.0) for r in valid]
+    colors = [get_color(r.change_pct) for r in valid]
+    
+    labels = []
+    for r in valid:
+        bbg = cfg_by_name[r.country].bloomberg if r.country in cfg_by_name else r.country
+        ticker = bbg.split()[0]  # Just take the ticker part, e.g., 'SPX' from 'SPX Index'
+        
+        stale_marker = " *" if r.stale else ""
+        label = f"{ticker}\n{r.change_pct:+.2f}%{stale_marker}"
+        labels.append(label)
+
+    fig = plt.figure(figsize=(10, 6))
+    ax = fig.add_subplot(111)
+    
+    squarify.plot(
+        sizes=sizes,
+        label=labels,
+        color=colors,
+        alpha=1.0,
+        ax=ax,
+        text_kwargs={'fontsize': 14, 'color': 'white', 'fontweight': 'bold'},
+        edgecolor="white",
+        linewidth=2
     )
 
-    fig, axes = plt.subplots(3, 3, figsize=(9, 7))
-    fig.patch.set_facecolor("white")
-
-    # Symmetric colour scale so 0% is always the same shade regardless
-    # of today's actual range — keeps the email visually consistent
-    # day over day, which matters for a "20-second read" product.
-    vmax = max([abs(r.change_pct) for r in ranked if r.change_pct is not None] + [1.0])
-    norm = mcolors.TwoSlopeNorm(vmin=-vmax, vcenter=0, vmax=vmax)
-    cmap = plt.cm.RdYlGn  # red = down, green = up — standard convention
-
-    for ax, r in zip(axes.flat, ranked):
-        if r.change_pct is None:
-            ax.set_facecolor("#e0e0e0")
-            ax.text(0.5, 0.5, f"{r.country}\nN/A", ha="center", va="center", fontsize=11)
-        else:
-            color = cmap(norm(r.change_pct))
-            ax.set_facecolor(color)
-            text_color = "white" if abs(r.change_pct) > vmax * 0.5 else "black"
-            stale_marker = " *" if r.stale else ""
-            ax.text(
-                0.5, 0.6, r.country, ha="center", va="center",
-                fontsize=12, fontweight="bold", color=text_color,
-            )
-            ax.text(
-                0.5, 0.35, f"{r.change_pct:+.2f}%{stale_marker}", ha="center", va="center",
-                fontsize=14, color=text_color,
-            )
-        ax.set_xticks([])
-        ax.set_yticks([])
-        for spine in ax.spines.values():
-            spine.set_edgecolor("white")
-            spine.set_linewidth(2)
-
-    # Hide any unused subplot cells (fewer than 9 countries resolved, edge case)
-    for ax in axes.flat[len(ranked):]:
-        ax.axis("off")
-
-    fig.suptitle("Overnight — Index % Change (Local Currency)", fontsize=13, y=0.98)
-    fig.text(0.5, 0.01, "* = stale / fallback data source", ha="center", fontsize=8, color="gray")
-    plt.tight_layout(rect=[0, 0.02, 1, 0.95])
+    ax.axis('off')
+    fig.suptitle("Overnight — Index % Change", fontsize=16, fontweight="bold", y=0.98)
+    fig.text(0.5, 0.02, "* = stale / fallback data source", ha="center", fontsize=9, color="gray")
+    
+    plt.tight_layout(rect=[0, 0.04, 1, 0.95])
     plt.savefig(out_path, dpi=150, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     return out_path
