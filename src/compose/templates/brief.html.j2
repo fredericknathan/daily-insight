@@ -1,0 +1,72 @@
+<!--
+Light mode only, per the outline's Q12. Table-based layout, no JS, no
+iframe, no external stylesheet — inline CSS is applied by premailer at
+build time (see build.py), this file just needs plain <style> for
+premailer to read and inline.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Macro Brief — {{ date }}</title>
+<style>
+  body { margin:0; padding:0; background-color:#f4f4f4; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .container { max-width:600px; margin:0 auto; background:#ffffff; }
+  .header { background:#0b1f3a; padding:20px 24px; }
+  .header h1 { color:#ffffff; font-size:18px; margin:0; }
+  .header .subtitle { color:#b8c4d9; font-size:12px; margin-top:4px; }
+  .country-row { padding:16px 24px; border-bottom:1px solid #eeeeee; }
+  .country-name { font-size:14px; font-weight:bold; color:#0b1f3a; margin:0 0 4px 0; }
+  .country-stats { font-size:12px; color:#555555; margin:0 0 6px 0; }
+  .country-stats .up { color:#1a7a3c; font-weight:bold; }
+  .country-stats .down { color:#b3261e; font-weight:bold; }
+  .country-para { font-size:13px; color:#222222; line-height:1.5; margin:0; }
+  .stale-flag { display:inline-block; font-size:10px; color:#946200; background:#fff3cd; padding:1px 6px; border-radius:3px; margin-left:6px; }
+  .heatmap-section { padding:16px 24px; text-align:center; }
+  .heatmap-section img { max-width:100%; height:auto; border:1px solid #eeeeee; }
+  .footer { padding:16px 24px; font-size:11px; color:#999999; text-align:center; }
+</style>
+</head>
+<body>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td>
+<div class="container">
+
+  <div class="header">
+    <h1>Daily Macro Brief</h1>
+    <div class="subtitle">{{ date }} · Generated {{ generated_time }} HKT</div>
+  </div>
+
+  <div class="heatmap-section">
+    <img src="cid:heatmap" alt="Cross-country index heatmap">
+  </div>
+
+  {% for c in countries %}
+  <div class="country-row">
+    <p class="country-name">
+      {{ loop.index }}. {{ c.name }} — {{ c.index_name }}
+      {% if c.stale %}<span class="stale-flag">FALLBACK DATA</span>{% endif %}
+    </p>
+    <p class="country-stats">
+      {{ c.bloomberg }} &nbsp;|&nbsp;
+      <span class="{{ 'up' if c.change_pct is not none and c.change_pct >= 0 else 'down' }}">
+        {{ "%.2f"|format(c.change_pct) if c.change_pct is not none else "N/A" }}%
+      </span>
+      &nbsp;|&nbsp; YTD: {{ "%+.1f"|format(c.ytd_pct) if c.ytd_pct is not none else "N/A" }}%
+      &nbsp;|&nbsp; 10Y: {{ "%.2f"|format(c.rate_10y_pct) if c.rate_10y_pct is not none else "N/A" }}%
+    </p>
+    <p class="country-para">{{ c.paragraph }}</p>
+  </div>
+  {% endfor %}
+
+  <div class="footer">
+    Sources: Perplexity Finance (primary){% if any_fallback %}, yfinance / cached fallback where flagged{% endif %}.
+    Not investment advice.
+  </div>
+
+</div>
+</td></tr>
+</table>
+</body>
+</html>

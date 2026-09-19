@@ -1,0 +1,102 @@
+countries:
+- name: USA
+  index_name: S&P 500
+  bloomberg: SPX Index
+  yahoo: ^GSPC
+  stock_exchange_suffix: US
+  fred_series: IRLTLT01USM156N
+  close_time_local: '16:00'
+  timezone: America/New_York
+  verified: true
+  news_query: USA stock market
+  tv_symbol: null
+- name: Japan
+  index_name: Nikkei 225
+  bloomberg: NKY Index
+  yahoo: ^N225
+  stock_exchange_suffix: JT
+  fred_series: IRLTLT01JPM156N
+  close_time_local: '15:00'
+  timezone: Asia/Tokyo
+  verified: false
+  news_query: Japan stock market
+  tv_symbol: null
+- name: Hong Kong
+  index_name: Hang Seng
+  bloomberg: HSI Index
+  yahoo: ^HSI
+  stock_exchange_suffix: HK
+  fred_series: null
+  close_time_local: '16:00'
+  timezone: Asia/Hong_Kong
+  verified: true
+  news_query: Hong Kong stock market
+  tv_symbol: TVC-HK10Y
+- name: Korea
+  index_name: KOSPI
+  bloomberg: KOSPI Index
+  yahoo: ^KS11
+  stock_exchange_suffix: KS
+  fred_series: IRLTLT01KRM156N
+  close_time_local: '15:30'
+  timezone: Asia/Seoul
+  verified: true
+  news_query: Korea stock market
+  tv_symbol: null
+- name: Indonesia
+  index_name: Jakarta Composite (JCI)
+  bloomberg: JCI Index
+  yahoo: ^JKSE
+  stock_exchange_suffix: IJ
+  fred_series: null
+  close_time_local: '15:00'
+  timezone: Asia/Jakarta
+  verified: false
+  news_query: Indonesia stock market
+  tv_symbol: TVC-ID10Y
+- name: Singapore
+  index_name: Straits Times Index (STI)
+  bloomberg: STI Index
+  yahoo: ^STI
+  stock_exchange_suffix: SP
+  fred_series: null
+  close_time_local: '17:00'
+  timezone: Asia/Singapore
+  verified: false
+  news_query: Singapore stock market
+  tv_symbol: TVC-SG10Y
+- name: Philippines
+  index_name: PSEi
+  bloomberg: PCOMP Index
+  yahoo: PSEI.PS
+  stock_exchange_suffix: PM
+  fred_series: null
+  close_time_local: '15:30'
+  timezone: Asia/Manila
+  verified: false
+  news_query: Philippines stock market
+  tv_symbol: TVC-PH10Y
+- name: Vietnam
+  index_name: VN-Index
+  bloomberg: VNINDEX Index
+  yahoo: ^VNINDEX.VN
+  stock_exchange_suffix: VN
+  fred_series: null
+  close_time_local: '15:00'
+  timezone: Asia/Ho_Chi_Minh
+  verified: false
+  news_query: Vietnam stock market
+  tv_symbol: TVC-VN10Y
+schedule:
+  cron: 0 6 * * 2-6
+  timezone: Asia/Hong_Kong
+  send_time_local: 06:00
+brief:
+  paragraph_word_target: 55
+  paragraph_word_max: 65
+  order: ranked_by_abs_move
+  ticker_format: bloomberg
+  theme: light
+alerting:
+  deadline_local: 06:30
+  channel: email

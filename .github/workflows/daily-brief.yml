@@ -1,0 +1,47 @@
+name: Daily Macro Brief
+
+on:
+  schedule:
+    # Tue-Sat HKT = Mon-Fri US market closes. 06:00 HKT chosen specifically
+    # to clear the US winter close (EST) with a 1hr buffer — see outline §2.
+    - cron: '0 6 * * 2-6'
+      timezone: 'Asia/Hong_Kong'
+  workflow_dispatch:   # manual "Run workflow" button for testing
+
+permissions:
+  contents: write   # to commit data/YYYY-MM-DD.json
+  models: read       # required for GitHub Models inference — repo MUST be
+                      # on a personal account, not an org (see src/synthesise/client.py)
+
+jobs:
+  send-brief:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt --break-system-packages
+          playwright install chromium --with-deps
+
+      - name: Run daily brief pipeline
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          BRIEF_RECIPIENT: ${{ secrets.BRIEF_RECIPIENT }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python -m src.main
+
+      - name: Commit daily snapshot
+        run: |
+          git config user.name "daily-brief-bot"
+          git config user.email "actions@github.com"
+          git add data/*.json
+          git diff --staged --quiet || git commit -m "data: daily snapshot $(date -u +%Y-%m-%d)"
+          git push
