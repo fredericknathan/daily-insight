@@ -2,10 +2,9 @@ name: Daily Macro Brief
 
 on:
   schedule:
-    # Tue-Sat HKT = Mon-Fri US market closes. 06:00 HKT chosen specifically
-    # to clear the US winter close (EST) with a 1hr buffer — see outline §2.
-    - cron: '0 6 * * 2-6'
-      timezone: 'Asia/Hong_Kong'
+    # Tue-Sat 06:00 HKT = Mon-Fri 22:00 UTC. 
+    # This specifically clears the US winter close (EST) with a 1hr buffer.
+    - cron: '0 22 * * 1-5'
   workflow_dispatch:   # manual "Run workflow" button for testing
 
 permissions:
