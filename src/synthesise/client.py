@@ -19,22 +19,22 @@ def generate(prompt: str, system: str = "", temperature: float = 0.3) -> str:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
 
-    # Try Primary (OpenAI)
-    openai_token = os.environ.get("LLM_API_KEY")
-    if openai_token:
+    # Try Primary (OpenRouter)
+    openrouter_token = os.environ.get("LLM_API_KEY")
+    if openrouter_token:
         try:
-            client = OpenAI(base_url="https://api.openai.com/v1", api_key=openai_token)
+            client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=openrouter_token)
             resp = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="nvidia/nemotron-3-ultra-550b-a55b:free",
                 messages=messages,
                 temperature=temperature,
                 timeout=15.0
             )
             return resp.choices[0].message.content.strip()
         except Exception as e:
-            logger.error("Primary OpenAI generation failed: %s", e)
+            logger.error("Primary OpenRouter generation failed: %s", e)
     else:
-        logger.warning("LLM_API_KEY (OpenAI) not set, attempting fallback...")
+        logger.warning("LLM_API_KEY (OpenRouter) not set, attempting fallback...")
 
     # Try Fallback 1 (Groq)
     groq_token = os.environ.get("GROQ_API_KEY")

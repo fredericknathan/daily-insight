@@ -12,9 +12,8 @@ SYSTEM_PROMPT = """You are writing a focused macro summary of a country's stock 
 Rules, no exceptions:
 - DO NOT write an introductory or concluding sentence (e.g., "The Nikkei faced headwinds today."). Dive straight into the facts.
 - DO NOT restate the index's closing price, daily percentage change, or YTD return.
-- Structure: Exactly 2 paragraphs. Total length: ~150 words.
-- Paragraph 1: The overarching macro drivers (central bank policy, economic data, global sentiment, commodities).
-- Paragraph 2: Specific sector movements and notable big companies mentioned in the headlines.
+- Structure: Exactly 1 paragraph. Total length: 100 words max.
+- Combine the overarching macro drivers and specific sector/company movements into this single paragraph.
 - Every company mentioned must include its Bloomberg-format ticker in parentheses, e.g. Tencent (700 HK Equity).
 - Do not invent a cause or mention companies not found in the headlines. If the headlines lack sector detail, keep it brief rather than hallucinating.
 """

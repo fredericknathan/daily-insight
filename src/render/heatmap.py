@@ -27,16 +27,12 @@ MARKET_WEIGHTS = {
 def get_color(change_pct: float | None) -> str:
     if change_pct is None:
         return "#e0e0e0" # N/A
-    if change_pct >= 3.0:
+    if change_pct > 0.0:
         return "#089981" # Bright Lime/Green
-    elif change_pct >= 1.0:
-        return "#26a69a" # Medium Green
-    elif change_pct > -1.0:
-        return "#1e222d" # Neutral Muted Dark Gray
-    elif change_pct > -3.0:
-        return "#ef5350" # Medium Red
-    else:
+    elif change_pct < 0.0:
         return "#f23645" # Bright Crimson/Red
+    else:
+        return "#d1d5db" # Light Gray
 
 def render_heatmap(resolved: list[ResolvedSnapshot], countries_cfg: list, out_path: str) -> str:
     cfg_by_name = {c.name: c for c in countries_cfg}

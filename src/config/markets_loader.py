@@ -12,6 +12,7 @@ class CountryConfig:
     index_name: str
     bloomberg: str
     yahoo: str
+    currency: str
     news_query: str
     tv_symbol: str | None
     stock_exchange_suffix: str

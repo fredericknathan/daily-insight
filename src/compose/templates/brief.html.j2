@@ -45,7 +45,7 @@ premailer to read and inline.
       {% if c.stale %}<span class="stale-flag">FALLBACK DATA</span>{% endif %}
     </p>
     <p class="country-stats">
-      {{ "{:,.2f}".format(c.price) if c.price is not none else "N/A" }} &nbsp;|&nbsp;
+      {{ "{:,.2f}".format(c.price) if c.price is not none else "N/A" }} {{ c.currency }} &nbsp;|&nbsp;
       <span class="{{ 'up' if c.change_pct is not none and c.change_pct >= 0 else 'down' }}">
         {{ "%+.2f"|format(c.change_pct) if c.change_pct is not none else "N/A" }}%
       </span>

@@ -83,6 +83,7 @@ def run():
             "name": cfg.name,
             "index_name": cfg.index_name,
             "bloomberg": format_index(cfg.bloomberg),
+            "currency": cfg.currency,
             "price": snap.price,
             "change_pct": snap.change_pct,
             "ytd_pct": snap.ytd_pct,
