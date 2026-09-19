@@ -56,7 +56,7 @@ Output ONLY valid JSON. No markdown blocks.
 
 JSON SCHEMA:
 {
-  "subject": "Extremely short (3-6 words). e.g. Global Yields Spike on Fed Fears",
+  "subject": "A highly descriptive, punchy headline summarizing the core market narrative. MUST be between 5 and 10 words (e.g., 'Asian Equities Slide as Fed Rate Hike Fears Resurface').",
   "regime": "One-sentence synthesis defining the prevailing global macro backdrop (e.g., Fed terminal rate expectations, crude price pressures, regional currency divergence).",
   "bullet_1_global_regime": "1 bullet point on the primary equity factor or thematic driver (e.g., mega-cap tech vs. cyclical value).",
   "bullet_2_cross_asset": "1 bullet point on rates, currency transmission, and sovereign debt impact.",

@@ -113,11 +113,11 @@ def run():
         subj_prompt = build_executive_prompt(summaries)
         raw_exec = generate(subj_prompt, system=EXECUTIVE_SUMMARY_PROMPT, temperature=0.5, json_mode=True)
         exec_summary = json.loads(raw_exec)
-        subject_str = exec_summary.get('subject', 'Mixed Markets').strip('\"\'')
+        subject_str = exec_summary.get('subject', 'Asian Markets See Broad Volatility Across Key Sectors').strip('\"\'')
         final_subject = f"Daily Macro Brief — {subject_str}"
     except Exception as e:
         logger.error("Failed to generate executive summary: %s", e)
-        final_subject = f"Daily Macro Brief — {output_countries[0]['name']} leads the move"
+        final_subject = f"Daily Macro Brief — {output_countries[0]['name']} Leads Market Volatility Amid Shifting Macro Conditions"
         exec_summary = {
             "bullet_1_global_regime": "Global markets traded mixed.",
             "bullet_2_cross_asset": "Cross-asset volatility remains muted.",
