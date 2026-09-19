@@ -5,9 +5,6 @@ coloured by % change according to standard financial market visual constraints.
 """
 
 from __future__ import annotations
-import matplotlib
-matplotlib.use("Agg")  # headless — no display in CI
-import matplotlib.pyplot as plt
 import squarify
 from src.fetch.resilience import ResolvedSnapshot
 
