@@ -53,7 +53,7 @@ premailer to read and inline.
       &nbsp;|&nbsp; YTD: {{ "%+.1f"|format(c.ytd_pct) if c.ytd_pct is not none else "N/A" }}%
       &nbsp;|&nbsp; 10Y: {{ "%.2f"|format(c.rate_10y_pct) if c.rate_10y_pct is not none else "N/A" }}%
     </p>
-    <p class="country-para">{{ c.paragraph }}</p>
+    <p class="country-para">{{ c.paragraph | replace('\n', '<br>') | safe }}</p>
   </div>
   {% endfor %}
 
