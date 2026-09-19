@@ -47,7 +47,7 @@ High-Signal Daily Macro Brief Template
   <p style="font-size:14px; font-weight:bold; color:#111827; margin-bottom:24px; font-style:italic;">"{{ exec_summary.regime }}"</p>
   {% endif %}
 
-  <h2>1. Executive Summary: The 30-Second Take</h2>
+  <h2>1. Executive Summary</h2>
   <div class="exec-summary">
     <ul>
       <li><strong>Global Regime:</strong> {{ exec_summary.bullet_1_global_regime }}</li>
@@ -57,13 +57,8 @@ High-Signal Daily Macro Brief Template
   </div>
 
   <h2>2. Global Equities Heatmap</h2>
-  <div style="position: relative; width: 100%; height: 350px; background: #ffffff; margin-bottom: 32px; border: 1px solid #e5e7eb;">
-    {% for box in heatmap_boxes %}
-    <div style="position: absolute; left: {{ box.x }}%; top: {{ box.y }}%; width: {{ box.width }}%; height: {{ box.height }}%; background-color: {{ box.color }}; border: 1px solid #ffffff; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white;">
-      <strong style="font-size: 14px; letter-spacing: 0.5px;">{{ box.ticker }}</strong>
-      <span style="font-size: 12px; font-weight: 500;">{{ box.change_pct }}</span>
-    </div>
-    {% endfor %}
+  <div class="heatmap-wrapper">
+    <img src="cid:heatmap" alt="Global Equities Heatmap">
   </div>
 
   <h2>3. Sovereign Rates & FX Transmission</h2>
@@ -108,7 +103,7 @@ High-Signal Daily Macro Brief Template
   {% for c in countries %}
   {% if c.macro_driver or c.sector_driver %}
   <div class="region-block">
-    <div class="region-header">{{ c.name }} | {{ c.index_name }}: {{ "{:,.2f}".format(c.price) if c.price is not none else "-" }} ({% if c.change_pct is not none %}{{ "%+.2f"|format(c.change_pct) }}%{% else %}-{% endif %})</div>
+    <div class="region-header">{{ c.name }} | {{ c.index_name }} ({{ c.ticker }}): {{ "{:,.2f}".format(c.price) if c.price is not none else "-" }} ({% if c.change_pct is not none %}{{ "%+.2f"|format(c.change_pct) }}%{% else %}-{% endif %})</div>
     <ul class="region-list">
       {% if c.macro_driver %}<li><strong>Macro & Liquidity:</strong> {{ c.macro_driver }}</li>{% endif %}
       {% if c.sector_driver %}<li><strong>Sector Dynamics:</strong> {{ c.sector_driver }}</li>{% endif %}
@@ -123,36 +118,6 @@ High-Signal Daily Macro Brief Template
   </div>
   {% endif %}
   {% endfor %}
-
-  <h2>5. 24-Hour Catalyst Calendar</h2>
-  {% if calendar_events and calendar_events | length > 0 %}
-  <table class="snapshot">
-    <thead>
-      <tr>
-        <th>Time (EST)</th>
-        <th>Country</th>
-        <th>Event / Indicator</th>
-        <th>Consensus</th>
-        <th>Prior</th>
-        <th>Asset Impact Focus</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for ev in calendar_events %}
-      <tr>
-        <td>{{ ev.time }}</td>
-        <td>{{ ev.country }}</td>
-        <td>{{ ev.event }}{% if ev.period %} ({{ ev.period }}){% endif %}</td>
-        <td>{{ ev.consensus }}</td>
-        <td>{{ ev.prior }}</td>
-        <td><em>{{ ev.asset_impact }}</em></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p style="font-size:13px; color:#6b7280;">No major high-impact catalysts scheduled for the next 24 hours.</p>
-  {% endif %}
 
 </div>
 </td></tr>

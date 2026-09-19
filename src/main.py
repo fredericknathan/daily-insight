@@ -99,11 +99,12 @@ def run():
             "stale": snap.stale,
         })
 
-    logger.info("Step 4/5: calculating HTML heatmap layout")
-    from src.render.heatmap import generate_heatmap_data
-    heatmap_boxes = generate_heatmap_data(resolved, countries_cfg)
+    logger.info("Step 4/5: rendering heatmap")
+    from src.render.heatmap import render_heatmap
+    heatmap_path = render_heatmap(resolved, countries_cfg, str(DATA_DIR / "heatmap.png"))
 
     logger.info("Step 5/5: composing + sending + archiving")
+    any_fallback = any(r.stale for r in resolved)
     
     # Generate Executive Summary
     exec_summary = {}
@@ -111,6 +112,7 @@ def run():
         summaries = [json.dumps({"country": c["name"], "data": {"macro": c["macro_driver"], "sector": c["sector_driver"], "movers": c["key_movers"]}}) for c in output_countries if c["macro_driver"]]
         subj_prompt = build_executive_prompt(summaries)
         raw_exec = generate(subj_prompt, system=EXECUTIVE_SUMMARY_PROMPT, temperature=0.5, json_mode=True)
+        exec_summary = json.loads(raw_exec)
         subject_str = exec_summary.get('subject', 'Mixed Markets').strip('\"\'')
         final_subject = f"Daily Macro Brief — {subject_str}"
     except Exception as e:
@@ -122,23 +124,11 @@ def run():
             "bullet_3_catalysts": "Awaiting further macroeconomic data."
         }
 
-    # Fetch and Process Calendar
-    from src.fetch.calendar import fetch_calendar
-    from src.synthesise.prompts import build_calendar_prompt, CALENDAR_PROMPT
-    calendar_events = []
-    try:
-        raw_events = fetch_calendar([m["name"] for m in countries_raw])
-        if raw_events:
-            cal_prompt = build_calendar_prompt(raw_events)
-            raw_cal_json = generate(cal_prompt, system=CALENDAR_PROMPT, temperature=0.3, json_mode=True)
-            calendar_events = json.loads(raw_cal_json).get("events", [])
-    except Exception as e:
-        logger.error("Failed to generate calendar events: %s", e)
-
-    html = build_email_html(output_countries, any_fallback, exec_summary, calendar_events, heatmap_boxes)
+    html = build_email_html(output_countries, any_fallback, exec_summary)
     send_brief(
         subject=final_subject,
         html_body=html,
+        heatmap_path=heatmap_path,
         to_address=TO_ADDRESS,
     )
     write_daily_snapshot(resolved)
