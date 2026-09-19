@@ -27,7 +27,6 @@ from src.synthesise.ticker_format import format_index
 
 from src.compose.build import build_email_html
 from src.deliver.mailer import send_brief
-from src.deliver.alerting import send_failure_alert
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -143,7 +142,4 @@ if __name__ == "__main__":
         run()
     except Exception as e:
         logger.critical("Pipeline failed: %s", e, exc_info=True)
-        try:
-            send_failure_alert(e, TO_ADDRESS)
-        finally:
-            sys.exit(1)
+        sys.exit(1)
