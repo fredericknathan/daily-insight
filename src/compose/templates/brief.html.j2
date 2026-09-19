@@ -1,31 +1,40 @@
 <!--
-Light mode only, per the outline's Q12. Table-based layout, no JS, no
-iframe, no external stylesheet — inline CSS is applied by premailer at
-build time (see build.py), this file just needs plain <style> for
-premailer to read and inline.
+High-Signal Daily Macro Brief Template
 -->
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daily Macro Brief — {{ date }}</title>
+<title>Daily Macro Brief</title>
 <style>
-  body { margin:0; padding:0; background-color:#f4f4f4; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  .container { max-width:600px; margin:0 auto; background:#ffffff; }
-  .header { background:#0b1f3a; padding:20px 24px; }
-  .header h1 { color:#ffffff; font-size:18px; margin:0; }
-  .header .subtitle { color:#b8c4d9; font-size:12px; margin-top:4px; }
-  .country-row { padding:16px 24px; border-bottom:1px solid #eeeeee; }
-  .country-name { font-size:14px; font-weight:bold; color:#0b1f3a; margin:0 0 4px 0; }
-  .country-stats { font-size:12px; color:#555555; margin:0 0 6px 0; }
-  .country-stats .up { color:#1a7a3c; font-weight:bold; }
-  .country-stats .down { color:#b3261e; font-weight:bold; }
-  .country-para { font-size:13px; color:#222222; line-height:1.5; margin:0; }
-  .stale-flag { display:inline-block; font-size:10px; color:#946200; background:#fff3cd; padding:1px 6px; border-radius:3px; margin-left:6px; }
-  .heatmap-section { padding:16px 24px; text-align:center; }
-  .heatmap-section img { max-width:100%; height:auto; border:1px solid #eeeeee; }
-  .footer { padding:16px 24px; font-size:11px; color:#999999; text-align:center; }
+  body { margin:0; padding:0; background-color:#ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #111827; }
+  .container { max-width:650px; margin:0 auto; background:#ffffff; padding: 20px; }
+  
+  h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #111827; padding-bottom: 4px; margin-top: 32px; margin-bottom: 16px; }
+  
+  /* Executive Summary */
+  .exec-summary ul { padding-left: 20px; margin: 0 0 24px 0; }
+  .exec-summary li { margin-bottom: 8px; font-size: 14px; line-height: 1.5; }
+  
+  /* Table */
+  table.snapshot { width: 100%; border-collapse: collapse; margin-bottom: 32px; font-size: 13px; }
+  table.snapshot th { text-align: left; border-bottom: 1px solid #d1d5db; padding: 8px 4px; color: #6b7280; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+  table.snapshot td { padding: 8px 4px; border-bottom: 1px solid #e5e7eb; }
+  .up { color: #089981; font-weight: 600; }
+  .down { color: #f23645; font-weight: 600; }
+  .neutral { color: #6b7280; font-weight: 600; }
+  
+  /* Regional Themes */
+  .region-block { margin-bottom: 24px; }
+  .region-header { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #111827; }
+  .region-list { padding-left: 20px; margin: 0; font-size: 13px; line-height: 1.5; }
+  .region-list li { margin-bottom: 6px; }
+  .mover { font-weight: 600; }
+  
+  /* Heatmap */
+  .heatmap-wrapper { margin-top: 32px; text-align: center; }
+  .heatmap-wrapper img { max-width: 100%; height: auto; border: 1px solid #e5e7eb; }
 </style>
 </head>
 <body>
@@ -33,28 +42,84 @@ premailer to read and inline.
 <tr><td>
 <div class="container">
 
+  <h2>Executive Summary: The 30-Second Take</h2>
+  <div class="exec-summary">
+    <ul>
+      <li><strong>Global Regime:</strong> {{ exec_summary.bullet_1_global_regime }}</li>
+      <li><strong>Cross-Asset Transmission:</strong> {{ exec_summary.bullet_2_cross_asset }}</li>
+      <li><strong>Catalysts:</strong> {{ exec_summary.bullet_3_catalysts }}</li>
+    </ul>
+  </div>
 
-  <div class="heatmap-section">
+  <h2>Cross-Asset Snapshot</h2>
+  <table class="snapshot">
+    <thead>
+      <tr>
+        <th>Index</th>
+        <th>Level</th>
+        <th>1D %</th>
+        <th>YTD %</th>
+        <th>10Y Yield</th>
+        <th>FX vs USD</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in countries %}
+      <tr>
+        <td><strong>{{ c.name }}</strong><br><span style="color:#6b7280; font-size:10px;">{{ c.index_name }}</span></td>
+        <td>{{ "{:,.2f}".format(c.price) if c.price is not none else "-" }}</td>
+        
+        {% if c.change_pct is not none %}
+          {% if c.change_pct > 0 %}<td class="up">{{ "%+.2f"|format(c.change_pct) }}%</td>
+          {% elif c.change_pct < 0 %}<td class="down">{{ "%.2f"|format(c.change_pct) }}%</td>
+          {% else %}<td class="neutral">0.00%</td>{% endif %}
+        {% else %}<td>-</td>{% endif %}
+
+        <td>{{ "%+.1f"|format(c.ytd_pct) + "%" if c.ytd_pct is not none else "-" }}</td>
+        
+        <td>
+          {{ "%.2f"|format(c.rate_10y_pct) + "%" if c.rate_10y_pct is not none else "-" }}
+          {% if c.rate_10y_bps_change is not none %}
+            <span style="font-size:10px; color:#6b7280;">({{ "%+.0f"|format(c.rate_10y_bps_change) }} bps)</span>
+          {% endif %}
+        </td>
+        
+        <td>
+          {{ "{:,.4f}".format(c.fx_price) if c.fx_price is not none else "-" }}
+          {% if c.fx_change_pct is not none %}
+            {% if c.fx_change_pct > 0 %}<span class="up" style="font-size:10px;">({{ "%+.2f"|format(c.fx_change_pct) }}%)</span>
+            {% elif c.fx_change_pct < 0 %}<span class="down" style="font-size:10px;">({{ "%.2f"|format(c.fx_change_pct) }}%)</span>
+            {% else %}<span class="neutral" style="font-size:10px;">(0.00%)</span>{% endif %}
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Regional Themes</h2>
+  {% for c in countries %}
+  {% if c.macro_driver or c.sector_driver %}
+  <div class="region-block">
+    <div class="region-header">{{ c.name }} | {{ c.index_name }}</div>
+    <ul class="region-list">
+      {% if c.macro_driver %}<li><strong>Macro & Flows:</strong> {{ c.macro_driver }}</li>{% endif %}
+      {% if c.sector_driver %}<li><strong>Sector Drivers:</strong> {{ c.sector_driver }}</li>{% endif %}
+      {% if c.key_movers and c.key_movers | length > 0 %}
+        <li><strong>Key Movers:</strong>
+          {% for m in c.key_movers %}
+            <br>&nbsp;&nbsp;• <span class="mover">{{ m.company }}</span>{% if m.delta %} ({{ m.delta }}){% endif %}: {{ m.context }}
+          {% endfor %}
+        </li>
+      {% endif %}
+    </ul>
+  </div>
+  {% endif %}
+  {% endfor %}
+
+  <div class="heatmap-wrapper">
     <img src="cid:heatmap" alt="Cross-country index heatmap">
   </div>
-
-  {% for c in countries %}
-  <div class="country-row">
-    <p class="country-name">
-      {{ loop.index }}. {{ c.name }} — {{ c.index_name }} ({{ c.bloomberg | replace(' Index', '') }})
-      {% if c.stale %}<span class="stale-flag">FALLBACK DATA</span>{% endif %}
-    </p>
-    <p class="country-stats">
-      {{ "{:,.2f}".format(c.price) if c.price is not none else "N/A" }} {{ c.currency }} &nbsp;|&nbsp;
-      <span class="{{ 'up' if c.change_pct is not none and c.change_pct >= 0 else 'down' }}">
-        {{ "%+.2f"|format(c.change_pct) if c.change_pct is not none else "N/A" }}%
-      </span>
-      &nbsp;|&nbsp; YTD: {{ "%+.1f"|format(c.ytd_pct) if c.ytd_pct is not none else "N/A" }}%
-      &nbsp;|&nbsp; 10Y: {{ "%.2f"|format(c.rate_10y_pct) if c.rate_10y_pct is not none else "N/A" }}%
-    </p>
-    <p class="country-para">{{ c.paragraph | replace('\n', '<br>') | safe }}</p>
-  </div>
-  {% endfor %}
 
 </div>
 </td></tr>

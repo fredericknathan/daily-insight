@@ -16,17 +16,30 @@ class MarketSnapshot:
     price: Optional[float]
     change_pct: Optional[float]
     ytd_pct: Optional[float]
-    news_headlines: list[str]
+    fx_price: Optional[float] = None
+    fx_change_pct: Optional[float] = None
+    news_headlines: list[str] = None
     source: str = "yfinance_rss"
     stale: bool = False
 
-
 def _fetch_news(query: str) -> list[str]:
+    import time
     try:
         encoded = urllib.parse.quote(query)
         url = f"https://news.google.com/rss/search?q={encoded}+when:1d&hl=en-US&gl=US&ceid=US:en"
         feed = feedparser.parse(url)
-        return [entry.title for entry in feed.entries]
+        
+        # Enforce temporal boundary: reject if older than 36h
+        current_time = time.time()
+        headlines = []
+        for entry in feed.entries:
+            if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                pub_time = time.mktime(entry.published_parsed)
+                if current_time - pub_time <= 36 * 3600:
+                    headlines.append(entry.title)
+            else:
+                headlines.append(entry.title) # If no parsed date, accept it
+        return headlines
     except Exception as e:
         logger.warning(f"Failed to fetch news for query '{query}': {e}")
         return []
@@ -50,7 +63,7 @@ def _yfinance_batch(tickers: dict[str, str]) -> dict[str, Optional[dict]]:
             if len(df) < 2:
                 if len(df) == 1:
                     t_info = yf.Ticker(symbol).info
-                    last_close = round(float(df["Close"].iloc[-1]), 2)
+                    last_close = round(float(df["Close"].iloc[-1]), 4)
                     change_pct = round(t_info.get("regularMarketChangePercent", 0.0), 2)
                     if change_pct == 0.0 and "previousClose" in t_info:
                          change_pct = round((last_close - t_info["previousClose"]) / t_info["previousClose"] * 100, 2)
@@ -59,13 +72,16 @@ def _yfinance_batch(tickers: dict[str, str]) -> dict[str, Optional[dict]]:
                 else:
                     out[country] = None
                     continue
-            last_close = round(float(df["Close"].iloc[-1]), 2)
+            last_close = round(float(df["Close"].iloc[-1]), 4)
             prev_close = float(df["Close"].iloc[-2])
             change_pct = round((last_close - prev_close) / prev_close * 100, 2)
 
-            jan1_idx = df.index[df.index.year == df.index[-1].year][0]
-            jan1_close = float(df.loc[jan1_idx, "Close"])
-            ytd_pct = round((last_close - jan1_close) / jan1_close * 100, 2)
+            try:
+                jan1_idx = df.index[df.index.year == df.index[-1].year][0]
+                jan1_close = float(df.loc[jan1_idx, "Close"])
+                ytd_pct = round((last_close - jan1_close) / jan1_close * 100, 2)
+            except Exception:
+                ytd_pct = None
 
             out[country] = {"price": last_close, "change_pct": change_pct, "ytd_pct": ytd_pct}
         except Exception as e:
@@ -78,11 +94,16 @@ def fetch_all(markets: list[dict]) -> dict[str, Optional[MarketSnapshot]]:
     valid_markets = [m for m in markets if m.get("yahoo")]
     
     tickers = {m["name"]: m["yahoo"] for m in valid_markets}
+    fx_tickers = {m["name"]: m["fx_ticker"] for m in valid_markets if m.get("fx_ticker")}
+    
     prices = _yfinance_batch(tickers)
+    fx_prices = _yfinance_batch(fx_tickers)
 
     for m in valid_markets:
         name = m["name"]
         price_data = prices.get(name)
+        fx_data = fx_prices.get(name)
+        
         if not price_data:
             results[name] = None
             continue
@@ -96,6 +117,8 @@ def fetch_all(markets: list[dict]) -> dict[str, Optional[MarketSnapshot]]:
             price=price_data["price"],
             change_pct=price_data["change_pct"],
             ytd_pct=price_data["ytd_pct"],
+            fx_price=fx_data["price"] if fx_data else None,
+            fx_change_pct=fx_data["change_pct"] if fx_data else None,
             news_headlines=headlines,
         )
     return results

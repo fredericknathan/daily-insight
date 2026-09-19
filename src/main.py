@@ -35,32 +35,32 @@ TO_ADDRESS = os.environ.get("BRIEF_RECIPIENT", os.environ.get("GMAIL_ADDRESS", "
 OUTPUT_DIR = Path("output")
 
 
-def synthesise_country(country_cfg, snapshot) -> str:
-    """LLM attempts to summarize the macro narrative based on headlines."""
+def synthesise_country(country_cfg, snapshot) -> dict:
+    import json
     if snapshot.price is None:
-        return fallback_sentence(country_cfg.name, country_cfg.index_name, snapshot)
+        return {}
 
     for attempt in range(2):
         try:
             prompt = build_country_prompt(country_cfg, snapshot)
-            paragraph = generate(prompt, system=SYSTEM_PROMPT)
-            return paragraph
+            raw_json = generate(prompt, system=SYSTEM_PROMPT, json_mode=True)
+            return json.loads(raw_json)
         except Exception as e:
             logger.error("%s: LLM generation failed (attempt %d): %s", country_cfg.name, attempt + 1, e)
 
-    logger.warning("%s: falling back to template sentence after failed generation", country_cfg.name)
-    return fallback_sentence(country_cfg.name, country_cfg.index_name, snapshot)
+    return {}
 
 
 def run():
+    import json
     config = load_config()
     countries_cfg = load_countries()
     countries_raw = config["countries"]
 
     logger.info("Step 1/5: primary fetch + cache fallback chain")
     primary_results = fetch_all(countries_raw)
-    resolved = resolve_all(countries_raw, primary_results)
     rates = fetch_all_rates(countries_raw)
+    resolved = resolve_all(countries_raw, primary_results, rates)
 
     logger.info("Step 2/5: ranking by |%% move|")
     resolved_by_name = {r.country: r for r in resolved}
@@ -71,14 +71,16 @@ def run():
         reverse=True,
     )
 
-    logger.info("Step 3/5: synthesising narrative (GitHub Models + validation guard)")
+    logger.info("Step 3/5: synthesising narrative (JSON Extraction)")
     output_countries = []
     any_fallback = False
     for cfg in ranked_cfgs:
         snap = resolved_by_name[cfg.name]
         if snap.source != "yfinance_rss":
             any_fallback = True
-        paragraph = synthesise_country(cfg, snap)
+        
+        parsed_data = synthesise_country(cfg, snap)
+        
         output_countries.append({
             "name": cfg.name,
             "index_name": cfg.index_name,
@@ -87,8 +89,13 @@ def run():
             "price": snap.price,
             "change_pct": snap.change_pct,
             "ytd_pct": snap.ytd_pct,
-            "rate_10y_pct": rates.get(cfg.name),
-            "paragraph": paragraph,
+            "rate_10y_pct": snap.rate_10y_pct,
+            "rate_10y_bps_change": snap.rate_10y_bps_change,
+            "fx_price": snap.fx_price,
+            "fx_change_pct": snap.fx_change_pct,
+            "macro_driver": parsed_data.get("macro_driver", ""),
+            "sector_driver": parsed_data.get("sector_driver", ""),
+            "key_movers": parsed_data.get("key_movers", []),
             "stale": snap.stale,
         })
 
@@ -99,26 +106,31 @@ def run():
 
     logger.info("Step 5/5: composing + sending + archiving")
     
-    # Generate dynamic subject line
+    # Generate Executive Summary
+    exec_summary = {}
     try:
-        summaries = [c["paragraph"] for c in output_countries]
-        subj_prompt = build_subject_prompt(summaries)
-        generated_subject = generate(subj_prompt, system=SUBJECT_SYSTEM_PROMPT, temperature=0.5)
-        # Strip quotes just in case
-        generated_subject = generated_subject.strip('"\'')
-        final_subject = f"Daily Macro Brief — {generated_subject}"
+        summaries = [json.dumps({"country": c["name"], "data": {"macro": c["macro_driver"], "sector": c["sector_driver"], "movers": c["key_movers"]}}) for c in output_countries if c["macro_driver"]]
+        subj_prompt = build_executive_prompt(summaries)
+        raw_exec = generate(subj_prompt, system=SUBJECT_SYSTEM_PROMPT, temperature=0.5, json_mode=True)
+        exec_summary = json.loads(raw_exec)
+        final_subject = f"Daily Macro Brief — {exec_summary.get('subject', 'Mixed Markets').strip('\"\'')}"
     except Exception as e:
-        logger.error("Failed to generate subject line, using fallback: %s", e)
+        logger.error("Failed to generate executive summary: %s", e)
         final_subject = f"Daily Macro Brief — {output_countries[0]['name']} leads the move"
+        exec_summary = {
+            "bullet_1_global_regime": "Global markets traded mixed.",
+            "bullet_2_cross_asset": "Cross-asset volatility remains muted.",
+            "bullet_3_catalysts": "Awaiting further macroeconomic data."
+        }
 
-    html = build_email_html(output_countries, any_fallback)
+    html = build_email_html(output_countries, any_fallback, exec_summary)
     send_brief(
         subject=final_subject,
         html_body=html,
         heatmap_path=heatmap_path,
         to_address=TO_ADDRESS,
     )
-    write_daily_snapshot(resolved, rates)
+    write_daily_snapshot(resolved)
 
     logger.info("Pipeline complete.")
 

@@ -64,6 +64,10 @@ def validate_paragraph(text: str, snapshot: ResolvedSnapshot) -> tuple[bool, lis
     return True, []
 
 
-def fallback_sentence(country_name: str, index_name: str, snapshot: ResolvedSnapshot) -> str:
-    """Zero-creativity fallback. Used when the LLM fails generation."""
-    return "A narrative summary could not be generated for this market today."
+def fallback_sentence(country_name: str, index_name: str, snapshot: ResolvedSnapshot) -> dict:
+    """Returns a safe, neutral dict when the LLM fails or data is missing entirely."""
+    return {
+        "macro_driver": "A narrative summary could not be generated for this market today.",
+        "sector_driver": "",
+        "key_movers": []
+    }

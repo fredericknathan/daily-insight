@@ -18,7 +18,7 @@ FRED_API_BASE = "https://api.stlouisfed.org/fred/series/observations"
 FRED_API_KEY = os.environ.get("FRED_API_KEY")
 
 
-def fetch_fred_yield(series_id: str) -> Optional[float]:
+def fetch_fred_yield(series_id: str) -> Optional[dict]:
     if not FRED_API_KEY:
         logger.warning("FRED_API_KEY not set — skipping FRED fetch")
         return None
@@ -32,7 +32,7 @@ def fetch_fred_yield(series_id: str) -> Optional[float]:
                 "api_key": FRED_API_KEY,
                 "file_type": "json",
                 "sort_order": "desc",
-                "limit": 1,
+                "limit": 2,
             },
             timeout=10,
         )
@@ -40,13 +40,20 @@ def fetch_fred_yield(series_id: str) -> Optional[float]:
         obs = resp.json().get("observations", [])
         if not obs or obs[0]["value"] == ".":
             return None
-        return round(float(obs[0]["value"]), 3)
+        
+        curr = float(obs[0]["value"])
+        bps = None
+        if len(obs) == 2 and obs[1]["value"] != ".":
+            prev = float(obs[1]["value"])
+            bps = round((curr - prev) * 100, 1)
+            
+        return {"rate": round(curr, 3), "bps_change": bps}
     except Exception as e:
         logger.warning("FRED fetch failed for series %s: %s", series_id, e)
         return None
 
 
-def fetch_tv_yields(tv_symbols: dict[str, str]) -> dict[str, float]:
+def fetch_tv_yields(tv_symbols: dict[str, str]) -> dict[str, dict]:
     results = {}
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -66,8 +73,19 @@ def fetch_tv_yields(tv_symbols: dict[str, str]) -> dict[str, float]:
                     pass  # if it times out, we just try to evaluate anyway
                 
                 price_str = page.evaluate("document.querySelector('.js-symbol-last') ? document.querySelector('.js-symbol-last').innerText : ''")
+                change_str = page.evaluate("document.querySelector('.js-symbol-change-pt') ? document.querySelector('.js-symbol-change-pt').innerText : ''")
+                
                 if price_str:
-                    results[country] = round(float(price_str.replace(',', '')), 3)
+                    rate = round(float(price_str.replace(',', '')), 3)
+                    bps = None
+                    if change_str:
+                        # TV displays unicode minus \u2212, replace with standard hyphen
+                        clean_change = change_str.replace('\u2212', '-').strip()
+                        try:
+                            bps = round(float(clean_change) * 100, 1)
+                        except Exception:
+                            pass
+                    results[country] = {"rate": rate, "bps_change": bps}
                 else:
                     results[country] = None
                     logger.warning(f"Could not find TV price for {country} ({symbol})")
@@ -81,7 +99,7 @@ def fetch_tv_yields(tv_symbols: dict[str, str]) -> dict[str, float]:
     return results
 
 
-def fetch_all_rates(markets: list[dict]) -> dict[str, Optional[float]]:
+def fetch_all_rates(markets: list[dict]) -> dict[str, dict]:
     rates = {}
     tv_to_fetch = {}
     
@@ -90,11 +108,11 @@ def fetch_all_rates(markets: list[dict]) -> dict[str, Optional[float]]:
         tv_symbol = m.get("tv_symbol")
         
         if series:
-            rates[m["name"]] = fetch_fred_yield(series)
+            rates[m["name"]] = fetch_fred_yield(series) or {}
         elif tv_symbol:
             tv_to_fetch[m["name"]] = tv_symbol
         else:
-            rates[m["name"]] = None  
+            rates[m["name"]] = {}  
             
     if tv_to_fetch:
         tv_rates = fetch_tv_yields(tv_to_fetch)

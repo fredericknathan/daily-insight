@@ -13,11 +13,15 @@ from openai import OpenAI
 logger = logging.getLogger(__name__)
 
 
-def generate(prompt: str, system: str = "", temperature: float = 0.3) -> str:
+def generate(prompt: str, system: str = "", temperature: float = 0.3, json_mode: bool = False) -> str:
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
+
+    kwargs = {"temperature": temperature, "timeout": 15.0}
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
 
     # Try Primary (Groq)
     groq_token = os.environ.get("GROQ_API_KEY")
@@ -25,10 +29,9 @@ def generate(prompt: str, system: str = "", temperature: float = 0.3) -> str:
         try:
             client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=groq_token)
             resp = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
+                model="llama3-70b-8192",  # Explicitly use model that supports JSON mode
                 messages=messages,
-                temperature=temperature,
-                timeout=15.0
+                **kwargs
             )
             return resp.choices[0].message.content.strip()
         except Exception as e:
@@ -45,8 +48,7 @@ def generate(prompt: str, system: str = "", temperature: float = 0.3) -> str:
             resp = client.chat.completions.create(
                 model="nvidia/nemotron-3-ultra-550b-a55b:free",
                 messages=messages,
-                temperature=temperature,
-                timeout=15.0
+                **kwargs
             )
             return resp.choices[0].message.content.strip()
         except Exception as e:
@@ -59,10 +61,9 @@ def generate(prompt: str, system: str = "", temperature: float = 0.3) -> str:
             logger.info("Using GitHub Models fallback...")
             client = OpenAI(base_url="https://models.github.ai/inference", api_key=github_token)
             resp = client.chat.completions.create(
-                model="openai/gpt-4.1-mini",
+                model="gpt-4o-mini",
                 messages=messages,
-                temperature=temperature,
-                timeout=15.0
+                **kwargs
             )
             return resp.choices[0].message.content.strip()
         except Exception as e:

@@ -8,15 +8,29 @@ in the visual components of the brief.
 from src.config.markets_loader import CountryConfig
 from src.fetch.resilience import ResolvedSnapshot
 
-SYSTEM_PROMPT = """You are writing a focused macro summary of a country's stock market session for a professional investor.
-Rules, no exceptions:
-- DO NOT write an introductory or concluding sentence (e.g., "The Nikkei faced headwinds today."). Dive straight into the facts.
-- DO NOT restate the index's closing price, daily percentage change, or YTD return.
-- Structure: Exactly 1 paragraph. Total length: 100 words max.
-- Focus strictly on the local country's domestic market (local economic data, local companies, local central bank). Do NOT write a generic US-centric or global summary unless it directly caused a specific local sector to move.
-- Combine the overarching macro drivers and specific sector/company movements into this single paragraph.
-- Every company mentioned must include its Bloomberg-format ticker in parentheses, e.g. Tencent (700 HK Equity).
-- Do not invent a cause or mention companies not found in the headlines. If the headlines lack sector detail, keep it brief rather than hallucinating.
+SYSTEM_PROMPT = """You are a strictly deterministic macro data extraction parser.
+Your only job is to extract market drivers from the provided news headlines and output a valid JSON object.
+You must NOT output any markdown blocks, conversational text, or anything other than pure JSON.
+
+RULES:
+1. Ban transition filler words completely: "meanwhile," "notably," "lingering fatigue," "on the other hand."
+2. Ban raw vendor tickers (e.g., convert "005930 KS Equity" to "Samsung Electronics" or format as "Samsung Electronics (005930)").
+3. Filter out mid/small-cap company news. Only extract companies if they are specifically cited as driving the broader market index.
+4. Focus purely on local domestic drivers (local economic data, local companies). Do NOT write a generic global summary unless it explicitly caused a domestic sector to move.
+
+OUTPUT JSON SCHEMA:
+{
+  "macro_driver": "1 sentence summarizing the dominant macro catalyst (central bank, FX, liquidity, or global regime transfer).",
+  "sector_driver": "1 sentence summarizing which specific domestic sectors drove the index delta.",
+  "key_movers": [
+    {
+      "company": "Company Name",
+      "delta": "Price change % (if explicitly stated in the headlines, else null)",
+      "context": "1 short sentence explaining why this stock moved and drove the index."
+    }
+  ]
+}
+If there are no valid key movers in the headlines, return an empty list `[]` for key_movers.
 """
 
 
@@ -42,25 +56,25 @@ def build_country_prompt(country_cfg: CountryConfig, snapshot: ResolvedSnapshot)
     return "\n".join(lines)
 
 
-SUBJECT_SYSTEM_PROMPT = """You are writing a short, punchy email subject line for a daily macro market brief.
-Rules:
-- Extremely short (3 to 6 words maximum).
-- Capture the dominant global macro theme based on the provided country summaries.
-- No punctuation at the end.
-- Do not use quotes.
-- Example: Tech Selloff Drags Asian Markets
-- Example: Global Yields Spike on Fed Fears
+EXECUTIVE_SUMMARY_PROMPT = """You are a strictly deterministic JSON generator.
+Your job is to read the individual country summaries and generate a 3-bullet Executive Summary and a punchy 3-6 word Subject Line.
+Output ONLY valid JSON. No markdown blocks.
+
+JSON SCHEMA:
+{
+  "subject": "Extremely short (3-6 words). e.g. Global Yields Spike on Fed Fears",
+  "bullet_1_global_regime": "1 bullet point on the overarching global regime or theme today.",
+  "bullet_2_cross_asset": "1 bullet point on cross-asset transmission (FX, Rates, Commodities impacting equities).",
+  "bullet_3_catalysts": "1 bullet point on key upcoming catalysts or the most dominant idiosyncratic driver."
+}
 """
 
-def build_subject_prompt(country_summaries: list[str]) -> str:
-    lines = ["Here are the market summaries for today:", ""]
-    for s in country_summaries:
-        if s and "A narrative summary could not be generated" not in s:
+def build_executive_prompt(country_jsons: list[str]) -> str:
+    lines = ["Here are the structured JSON summaries for today's markets:", ""]
+    for s in country_jsons:
+        if s and "fallback" not in s:
             lines.append(s)
             lines.append("---")
-    
-    if len(lines) <= 2:
-        return "Write a generic subject line like 'Mixed Global Markets'"
-        
-    lines.append("\nWrite the extremely short subject line now.")
+            
+    lines.append("\nGenerate the JSON output now.")
     return "\n".join(lines)

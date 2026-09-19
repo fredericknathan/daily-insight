@@ -78,6 +78,7 @@ def render_heatmap(resolved: list[ResolvedSnapshot], countries_cfg: list, out_pa
         linewidth=2
     )
 
+    ax.set_title("Equity Benchmarks (Sized by Approx. Market Cap Root)", fontsize=10, color="#555555", pad=10)
     ax.axis('off')
     
     plt.tight_layout(rect=[0, 0, 1, 1])

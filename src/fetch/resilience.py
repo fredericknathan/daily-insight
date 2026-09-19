@@ -31,8 +31,12 @@ class ResolvedSnapshot:
     country: str
     price: Optional[float]
     change_pct: Optional[float]
-    ytd_pct: Optional[float]
-    news_headlines: list
+    ytd_pct: float | None
+    rate_10y_pct: float | None
+    rate_10y_bps_change: float | None
+    fx_price: float | None
+    fx_change_pct: float | None
+    news_headlines: list[str]
     source: str          # "yfinance_rss" | "cache" | "unavailable"
     stale: bool
     as_of: str
@@ -52,6 +56,10 @@ def _load_last_good(country: str) -> Optional[dict]:
                         "price": entry["close"],
                         "change_pct": entry.get("change_pct"),
                         "ytd_pct": entry.get("ytd_pct"),
+                        "rate_10y_pct": entry.get("rate_10y_pct"),
+                        "rate_10y_bps_change": entry.get("rate_10y_bps_change"),
+                        "fx_price": entry.get("fx_price"),
+                        "fx_change_pct": entry.get("fx_change_pct"),
                         "as_of": day.get("date", "unknown"),
                     }
         except Exception:
@@ -62,6 +70,7 @@ def _load_last_good(country: str) -> Optional[dict]:
 def resolve_all(
     markets: list[dict],
     primary_results: dict[str, Optional[MarketSnapshot]],
+    rates_data: dict[str, dict]
 ) -> list[ResolvedSnapshot]:
     today = datetime.now().strftime("%Y-%m-%d")
     resolved = []
@@ -69,12 +78,22 @@ def resolve_all(
     for m in markets:
         name = m["name"]
         snap = primary_results.get(name)
+        r_data = rates_data.get(name, {})
 
         if snap is not None:
             resolved.append(ResolvedSnapshot(
-                country=name, price=snap.price, change_pct=snap.change_pct,
-                ytd_pct=snap.ytd_pct, news_headlines=snap.news_headlines,
-                source="yfinance_rss", stale=False, as_of=today,
+                country=name, 
+                price=snap.price, 
+                change_pct=snap.change_pct,
+                ytd_pct=snap.ytd_pct, 
+                rate_10y_pct=r_data.get("rate"),
+                rate_10y_bps_change=r_data.get("bps_change"),
+                fx_price=snap.fx_price,
+                fx_change_pct=snap.fx_change_pct,
+                news_headlines=snap.news_headlines,
+                source="yfinance_rss", 
+                stale=False, 
+                as_of=today,
             ))
             continue
 
@@ -82,22 +101,34 @@ def resolve_all(
         if cached is not None:
             logger.warning("%s: falling back to cached value from %s", name, cached["as_of"])
             resolved.append(ResolvedSnapshot(
-                country=name, price=cached["price"], change_pct=cached["change_pct"],
-                ytd_pct=cached["ytd_pct"], news_headlines=[],
-                source="cache", stale=True, as_of=cached["as_of"],
+                country=name, 
+                price=cached["price"], 
+                change_pct=cached["change_pct"],
+                ytd_pct=cached["ytd_pct"], 
+                rate_10y_pct=cached.get("rate_10y_pct"),
+                rate_10y_bps_change=cached.get("rate_10y_bps_change"),
+                fx_price=cached.get("fx_price"),
+                fx_change_pct=cached.get("fx_change_pct"),
+                news_headlines=[],
+                source="cache", 
+                stale=True, 
+                as_of=cached["as_of"],
             ))
             continue
 
         logger.error("%s: no data from any source — will show as unavailable", name)
         resolved.append(ResolvedSnapshot(
-            country=name, price=None, change_pct=None, ytd_pct=None,
+            country=name, 
+            price=None, change_pct=None, ytd_pct=None,
+            rate_10y_pct=None, rate_10y_bps_change=None,
+            fx_price=None, fx_change_pct=None,
             news_headlines=[], source="unavailable", stale=True, as_of=today,
         ))
 
     return resolved
 
 
-def write_daily_snapshot(resolved: list[ResolvedSnapshot], rates: dict[str, Optional[float]]):
+def write_daily_snapshot(resolved: list[ResolvedSnapshot]):
     """Commits today's resolved data to data/YYYY-MM-DD.json — this file
     IS the archive AND the cache fallback for tomorrow."""
     today = datetime.now().strftime("%Y-%m-%d")
@@ -113,7 +144,10 @@ def write_daily_snapshot(resolved: list[ResolvedSnapshot], rates: dict[str, Opti
                 "close": r.price,
                 "change_pct": r.change_pct,
                 "ytd_pct": r.ytd_pct,
-                "rate_10y_pct": rates.get(r.country),
+                "rate_10y_pct": r.rate_10y_pct,
+                "rate_10y_bps_change": r.rate_10y_bps_change,
+                "fx_price": r.fx_price,
+                "fx_change_pct": r.fx_change_pct,
                 "source": r.source,
                 "stale": r.stale,
                 "news_headlines": r.news_headlines,

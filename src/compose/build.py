@@ -15,7 +15,7 @@ from premailer import transform
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 
 
-def build_email_html(countries: list[dict], any_fallback: bool) -> str:
+def build_email_html(countries: list[dict], any_fallback: bool, exec_summary: dict) -> str:
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
     template = env.get_template("brief.html.j2")
 
@@ -25,6 +25,7 @@ def build_email_html(countries: list[dict], any_fallback: bool) -> str:
         generated_time=now.strftime("%H:%M"),
         countries=countries,
         any_fallback=any_fallback,
+        exec_summary=exec_summary,
     )
 
     # premailer inlines the <style> block into every element's style=""
