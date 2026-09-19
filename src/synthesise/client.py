@@ -15,14 +15,14 @@ from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
-MODEL = "openai/gpt-4.1-mini"  # small, fast, cheap on rate limits — plenty for 9 short paragraphs
-BASE_URL = "https://models.github.ai/inference"
+MODEL = os.environ.get("LLM_MODEL", "gpt-4o-mini")
+BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
 
 
 def get_client() -> OpenAI | None:
-    token = os.environ.get("GITHUB_TOKEN")
+    token = os.environ.get("LLM_API_KEY")
     if not token:
-        logger.warning("GITHUB_TOKEN not set. Running in MOCK mode for local testing.")
+        logger.warning("LLM_API_KEY not set. Running in MOCK mode for local testing.")
         return None
     return OpenAI(base_url=BASE_URL, api_key=token)
 
