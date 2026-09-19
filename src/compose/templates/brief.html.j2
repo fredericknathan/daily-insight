@@ -41,11 +41,10 @@ premailer to read and inline.
   {% for c in countries %}
   <div class="country-row">
     <p class="country-name">
-      {{ loop.index }}. {{ c.name }} — {{ c.index_name }}
+      {{ loop.index }}. {{ c.name }} — {{ c.index_name }} ({{ c.bloomberg | replace(' Index', '') }})
       {% if c.stale %}<span class="stale-flag">FALLBACK DATA</span>{% endif %}
     </p>
     <p class="country-stats">
-      {{ c.bloomberg | replace(' Index', '') }} &nbsp;|&nbsp;
       {{ "{:,.2f}".format(c.price) if c.price is not none else "N/A" }} &nbsp;|&nbsp;
       <span class="{{ 'up' if c.change_pct is not none and c.change_pct >= 0 else 'down' }}">
         {{ "%+.2f"|format(c.change_pct) if c.change_pct is not none else "N/A" }}%
