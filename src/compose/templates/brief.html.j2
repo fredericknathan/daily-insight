@@ -57,8 +57,13 @@ High-Signal Daily Macro Brief Template
   </div>
 
   <h2>2. Global Equities Heatmap</h2>
-  <div class="heatmap-wrapper">
-    <img src="cid:heatmap" alt="Global Equities Heatmap">
+  <div style="position: relative; width: 100%; height: 350px; background: #ffffff; margin-bottom: 32px; border: 1px solid #e5e7eb;">
+    {% for box in heatmap_boxes %}
+    <div style="position: absolute; left: {{ box.x }}%; top: {{ box.y }}%; width: {{ box.width }}%; height: {{ box.height }}%; background-color: {{ box.color }}; border: 1px solid #ffffff; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white;">
+      <strong style="font-size: 14px; letter-spacing: 0.5px;">{{ box.ticker }}</strong>
+      <span style="font-size: 12px; font-weight: 500;">{{ box.change_pct }}</span>
+    </div>
+    {% endfor %}
   </div>
 
   <h2>3. Sovereign Rates & FX Transmission</h2>

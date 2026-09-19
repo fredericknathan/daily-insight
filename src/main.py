@@ -23,7 +23,7 @@ from src.synthesise.client import generate
 from src.synthesise.prompts import SYSTEM_PROMPT, build_country_prompt, SUBJECT_SYSTEM_PROMPT, build_subject_prompt
 from src.synthesise.validate import validate_paragraph, fallback_sentence
 from src.synthesise.ticker_format import format_index
-from src.render.heatmap import render_heatmap
+
 from src.compose.build import build_email_html
 from src.deliver.mailer import send_brief
 from src.deliver.alerting import send_failure_alert
@@ -99,10 +99,9 @@ def run():
             "stale": snap.stale,
         })
 
-    logger.info("Step 4/5: rendering heatmap")
-    OUTPUT_DIR.mkdir(exist_ok=True)
-    heatmap_path = str(OUTPUT_DIR / "heatmap.png")
-    render_heatmap(resolved, countries_cfg, heatmap_path)
+    logger.info("Step 4/5: calculating HTML heatmap layout")
+    from src.render.heatmap import generate_heatmap_data
+    heatmap_boxes = generate_heatmap_data(resolved, countries_cfg)
 
     logger.info("Step 5/5: composing + sending + archiving")
     
@@ -136,11 +135,10 @@ def run():
     except Exception as e:
         logger.error("Failed to generate calendar events: %s", e)
 
-    html = build_email_html(output_countries, any_fallback, exec_summary, calendar_events)
+    html = build_email_html(output_countries, any_fallback, exec_summary, calendar_events, heatmap_boxes)
     send_brief(
         subject=final_subject,
         html_body=html,
-        heatmap_path=heatmap_path,
         to_address=TO_ADDRESS,
     )
     write_daily_snapshot(resolved)
