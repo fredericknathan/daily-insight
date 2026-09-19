@@ -20,7 +20,7 @@ from src.fetch.primary import fetch_all
 from src.fetch.resilience import resolve_all, write_daily_snapshot
 from src.fetch.rates import fetch_all_rates
 from src.synthesise.client import generate
-from src.synthesise.prompts import SYSTEM_PROMPT, build_country_prompt, SUBJECT_SYSTEM_PROMPT, build_subject_prompt
+from src.synthesise.prompts import SYSTEM_PROMPT, build_country_prompt, EXECUTIVE_SUMMARY_PROMPT, build_executive_prompt
 from src.synthesise.validate import validate_paragraph, fallback_sentence
 from src.synthesise.ticker_format import format_index
 
@@ -110,9 +110,9 @@ def run():
     try:
         summaries = [json.dumps({"country": c["name"], "data": {"macro": c["macro_driver"], "sector": c["sector_driver"], "movers": c["key_movers"]}}) for c in output_countries if c["macro_driver"]]
         subj_prompt = build_executive_prompt(summaries)
-        raw_exec = generate(subj_prompt, system=SUBJECT_SYSTEM_PROMPT, temperature=0.5, json_mode=True)
-        exec_summary = json.loads(raw_exec)
-        final_subject = f"Daily Macro Brief — {exec_summary.get('subject', 'Mixed Markets').strip('\"\'')}"
+        raw_exec = generate(subj_prompt, system=EXECUTIVE_SUMMARY_PROMPT, temperature=0.5, json_mode=True)
+        subject_str = exec_summary.get('subject', 'Mixed Markets').strip('\"\'')
+        final_subject = f"Daily Macro Brief — {subject_str}"
     except Exception as e:
         logger.error("Failed to generate executive summary: %s", e)
         final_subject = f"Daily Macro Brief — {output_countries[0]['name']} leads the move"
