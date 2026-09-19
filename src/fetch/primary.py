@@ -22,27 +22,79 @@ class MarketSnapshot:
     source: str = "yfinance_rss"
     stale: bool = False
 
-def _fetch_news(query: str) -> list[str]:
+def _is_fresh(entry, max_age_hours: int = 36) -> bool:
+    """Return True if the RSS entry is within max_age_hours old."""
     import time
+    if hasattr(entry, 'published_parsed') and entry.published_parsed:
+        pub_time = time.mktime(entry.published_parsed)
+        return (time.time() - pub_time) <= max_age_hours * 3600
+    return True  # no date → accept it
+
+
+_FINANCE_KEYWORDS = {
+    'stock', 'share', 'market', 'index', 'rally', 'sell', 'buy', 'trade', 'trading',
+    'invest', 'fund', 'equity', 'bond', 'yield', 'rate', 'bank', 'central bank',
+    'inflation', 'gdp', 'economy', 'economic', 'finance', 'financial', 'currency',
+    'forex', 'exchange', 'profit', 'earnings', 'revenue', 'ipo', 'merger', 'acquisition',
+    'dividend', 'quarter', 'fiscal', 'monetary', 'policy', 'growth', 'recession',
+    'export', 'import', 'trade', 'deficit', 'surplus', 'debt', 'credit', 'loan',
+    'interest', 'fed', 'boj', 'ecb', 'bsp', 'mas', 'ojk', 'sbv', 'boa',
+    'nikkei', 'kospi', 'hang seng', 'vn-index', 'psei', 'jci', 'sti', 's&p',
+    'nasdaq', 'dow', 'sensex', 'yen', 'won', 'dong', 'peso', 'rupiah', 'ringgit',
+}
+
+def _is_financial(headline: str) -> bool:
+    """Return True if the headline is plausibly financial/market-related."""
+    lower = headline.lower()
+    return any(kw in lower for kw in _FINANCE_KEYWORDS)
+
+
+def _fetch_rss(url: str, require_financial: bool = True) -> list[str]:
+    """Fetch headlines from a single RSS feed URL, enforcing 36h freshness."""
+    try:
+        feed = feedparser.parse(url)
+        results = []
+        for e in feed.entries:
+            if not _is_fresh(e):
+                continue
+            if require_financial and not _is_financial(e.title):
+                continue
+            results.append(e.title)
+        return results
+    except Exception as e:
+        logger.warning("RSS fetch failed for %s: %s", url, e)
+        return []
+
+
+def _fetch_news(query: str, extra_rss: list[str] | None = None) -> list[str]:
+    """Fetch headlines from Google News + any country-specific RSS feeds."""
+    all_headlines: list[str] = []
+    seen: set[str] = set()
+
+    # 1. Country-specific publication RSS feeds (highest quality / most targeted)
+    for rss_url in (extra_rss or []):
+        for h in _fetch_rss(rss_url):
+            key = h.lower().strip()
+            if key not in seen:
+                seen.add(key)
+                all_headlines.append(h)
+
+    # 2. Google News RSS (broad aggregator — fills gaps)
     try:
         encoded = urllib.parse.quote(query)
         url = f"https://news.google.com/rss/search?q={encoded}+when:1d&hl=en-US&gl=US&ceid=US:en"
         feed = feedparser.parse(url)
-        
-        # Enforce temporal boundary: reject if older than 36h
-        current_time = time.time()
-        headlines = []
         for entry in feed.entries:
-            if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                pub_time = time.mktime(entry.published_parsed)
-                if current_time - pub_time <= 36 * 3600:
-                    headlines.append(entry.title)
-            else:
-                headlines.append(entry.title) # If no parsed date, accept it
-        return headlines
+            if _is_fresh(entry):
+                key = entry.title.lower().strip()
+                if key not in seen:
+                    seen.add(key)
+                    all_headlines.append(entry.title)
     except Exception as e:
-        logger.warning(f"Failed to fetch news for query '{query}': {e}")
-        return []
+        logger.warning("Google News fetch failed for query '%s': %s", query, e)
+
+    logger.info("Fetched %d unique headlines for query '%s'", len(all_headlines), query)
+    return all_headlines
 
 def _yfinance_batch(tickers: dict[str, str]) -> dict[str, Optional[dict]]:
     symbols = list(tickers.values())
@@ -109,7 +161,8 @@ def fetch_all(markets: list[dict]) -> dict[str, Optional[MarketSnapshot]]:
             continue
 
         news_query = m.get("news_query", f"{name} stock market")
-        headlines = _fetch_news(news_query)
+        extra_rss = m.get("rss_feeds", [])
+        headlines = _fetch_news(news_query, extra_rss=extra_rss)
 
         results[name] = MarketSnapshot(
             country=name,

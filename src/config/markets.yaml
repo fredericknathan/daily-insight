@@ -8,10 +8,12 @@ countries:
   close_time_local: '16:00'
   timezone: America/New_York
   verified: true
-  news_query: USA stock market
+  news_query: USA S&P 500 stock market
   tv_symbol: null
   currency: USD
   fx_ticker: DX-Y.NYB
+  rss_feeds:
+    - https://feeds.marketwatch.com/marketwatch/marketpulse
 - name: Japan
   index_name: Nikkei 225
   bloomberg: NKY Index
@@ -21,10 +23,13 @@ countries:
   close_time_local: '15:00'
   timezone: Asia/Tokyo
   verified: false
-  news_query: Japan stock market
+  news_query: Japan Nikkei 225 stock market
   tv_symbol: null
   currency: JPY
   fx_ticker: JPY=X
+  rss_feeds:
+    - https://asia.nikkei.com/rss/feed/nar
+    - https://www.boj.or.jp/en/rss/whatsnew.xml
 - name: Hong Kong
   index_name: Hang Seng
   bloomberg: HSI Index
@@ -34,10 +39,13 @@ countries:
   close_time_local: '16:00'
   timezone: Asia/Hong_Kong
   verified: true
-  news_query: Hong Kong stock market
+  news_query: Hong Kong Hang Seng stock market
   tv_symbol: TVC-HK10Y
   currency: HKD
   fx_ticker: HKD=X
+  rss_feeds:
+    - https://www.scmp.com/rss/91/feed
+    - https://www.hkex.com.hk/Services/RSS-Feeds/News-Releases?sc_lang=en
 - name: Korea
   index_name: KOSPI
   bloomberg: KOSPI Index
@@ -47,10 +55,14 @@ countries:
   close_time_local: '15:30'
   timezone: Asia/Seoul
   verified: true
-  news_query: Korea stock market
+  news_query: Korea KOSPI stock market
   tv_symbol: null
   currency: KRW
   fx_ticker: KRW=X
+  rss_feeds:
+    - https://en.yna.co.kr/RSS/news.xml
+    - https://www.hankyung.com/feed/finance
+    - https://feed.koreatimes.co.kr/k/economy.xml
 - name: Indonesia
   index_name: Jakarta Composite
   bloomberg: JCI Index
@@ -60,10 +72,12 @@ countries:
   close_time_local: '15:00'
   timezone: Asia/Jakarta
   verified: false
-  news_query: Indonesia stock market
+  news_query: Indonesia IDX Jakarta Composite stock market
   tv_symbol: TVC-ID10Y
   currency: IDR
   fx_ticker: IDR=X
+  rss_feeds:
+    - https://en.antaranews.com/rss/business-investment.xml
 - name: Singapore
   index_name: Straits Times Index
   bloomberg: STI Index
@@ -73,10 +87,13 @@ countries:
   close_time_local: '17:00'
   timezone: Asia/Singapore
   verified: false
-  news_query: Singapore stock market
+  news_query: Singapore Straits Times Index STI stock market
   tv_symbol: TVC-SG10Y
   currency: SGD
   fx_ticker: SGD=X
+  rss_feeds:
+    - https://www.businesstimes.com.sg/rss/companies-markets
+    - https://www.businesstimes.com.sg/rss/banking-finance
 - name: Philippines
   index_name: PSEi
   bloomberg: PCOMP Index
@@ -86,10 +103,14 @@ countries:
   close_time_local: '15:30'
   timezone: Asia/Manila
   verified: false
-  news_query: Philippines stock market
+  news_query: Philippines PSEi stock market
   tv_symbol: TVC-PH10Y
   currency: PHP
   fx_ticker: PHP=X
+  rss_feeds:
+    - https://www.bworldonline.com/stock-market/feed/
+    - https://www.philstar.com/rss/finance
+    - https://mb.com.ph/category/stock-market-foreign-exchange/feed/
 - name: Vietnam
   index_name: VN-Index
   bloomberg: VNINDEX Index
@@ -99,10 +120,13 @@ countries:
   close_time_local: '15:00'
   timezone: Asia/Ho_Chi_Minh
   verified: false
-  news_query: Vietnam stock market
+  news_query: Vietnam VN-Index stock market
   tv_symbol: TVC-VN10Y
   currency: VND
   fx_ticker: VND=X
+  rss_feeds:
+    - https://e.vnexpress.net/rss/business.rss
+    - https://vneconomy.vn/chung-khoan.rss
 schedule:
   cron: 0 6 * * 2-6
   timezone: Asia/Hong_Kong

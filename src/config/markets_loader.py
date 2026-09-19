@@ -21,6 +21,7 @@ class CountryConfig:
     close_time_local: str
     timezone: str
     verified: bool
+    rss_feeds: list[str] = None
 
 
 def load_config() -> dict:
