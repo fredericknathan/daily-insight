@@ -45,9 +45,10 @@ premailer to read and inline.
       {% if c.stale %}<span class="stale-flag">FALLBACK DATA</span>{% endif %}
     </p>
     <p class="country-stats">
-      {{ c.bloomberg }} &nbsp;|&nbsp;
+      {{ c.bloomberg | replace(' Index', '') }} &nbsp;|&nbsp;
+      {{ "{:,.2f}".format(c.price) if c.price is not none else "N/A" }} &nbsp;|&nbsp;
       <span class="{{ 'up' if c.change_pct is not none and c.change_pct >= 0 else 'down' }}">
-        {{ "%.2f"|format(c.change_pct) if c.change_pct is not none else "N/A" }}%
+        {{ "%+.2f"|format(c.change_pct) if c.change_pct is not none else "N/A" }}%
       </span>
       &nbsp;|&nbsp; YTD: {{ "%+.1f"|format(c.ytd_pct) if c.ytd_pct is not none else "N/A" }}%
       &nbsp;|&nbsp; 10Y: {{ "%.2f"|format(c.rate_10y_pct) if c.rate_10y_pct is not none else "N/A" }}%
@@ -55,11 +56,6 @@ premailer to read and inline.
     <p class="country-para">{{ c.paragraph }}</p>
   </div>
   {% endfor %}
-
-  <div class="footer">
-    Sources: Yahoo Finance & Google News (primary), FRED & TradingView (rates){% if any_fallback %}, cached fallback where flagged{% endif %}.
-    Not investment advice.
-  </div>
 
 </div>
 </td></tr>

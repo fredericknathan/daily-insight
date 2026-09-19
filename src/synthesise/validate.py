@@ -65,15 +65,5 @@ def validate_paragraph(text: str, snapshot: ResolvedSnapshot) -> tuple[bool, lis
 
 
 def fallback_sentence(country_name: str, index_name: str, snapshot: ResolvedSnapshot) -> str:
-    """Zero-creativity, template-only sentence. Used when the LLM fails
-    validation twice. Boring but never wrong."""
-    if snapshot.price is None:
-        return f"{country_name} — {index_name}: data unavailable this morning."
-
-    direction = "rose" if (snapshot.change_pct or 0) >= 0 else "fell"
-    ytd_part = f", {snapshot.ytd_pct:+.1f}% YTD" if snapshot.ytd_pct is not None else ""
-    stale_part = " (last available session)" if snapshot.stale else ""
-    return (
-        f"{country_name} — {index_name} {direction} {snapshot.change_pct:+.2f}% "
-        f"to {snapshot.price:,.2f}{ytd_part}{stale_part}."
-    )
+    """Zero-creativity fallback. Used when the LLM fails generation."""
+    return "A narrative summary could not be generated for this market today."

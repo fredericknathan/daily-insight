@@ -82,10 +82,8 @@ def render_heatmap(resolved: list[ResolvedSnapshot], countries_cfg: list, out_pa
     )
 
     ax.axis('off')
-    fig.suptitle("Overnight — Index % Change", fontsize=16, fontweight="bold", y=0.98)
-    fig.text(0.5, 0.02, "* = stale / fallback data source", ha="center", fontsize=9, color="gray")
     
-    plt.tight_layout(rect=[0, 0.04, 1, 0.95])
-    plt.savefig(out_path, dpi=150, bbox_inches="tight", facecolor="white")
+    plt.tight_layout(rect=[0, 0, 1, 1])
+    plt.savefig(out_path, dpi=150, bbox_inches="tight", facecolor="white", pad_inches=0.0)
     plt.close(fig)
     return out_path
