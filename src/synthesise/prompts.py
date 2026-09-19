@@ -13,6 +13,7 @@ Rules, no exceptions:
 - DO NOT write an introductory or concluding sentence (e.g., "The Nikkei faced headwinds today."). Dive straight into the facts.
 - DO NOT restate the index's closing price, daily percentage change, or YTD return.
 - Structure: Exactly 1 paragraph. Total length: 100 words max.
+- Focus strictly on the local country's domestic market (local economic data, local companies, local central bank). Do NOT write a generic US-centric or global summary unless it directly caused a specific local sector to move.
 - Combine the overarching macro drivers and specific sector/company movements into this single paragraph.
 - Every company mentioned must include its Bloomberg-format ticker in parentheses, e.g. Tencent (700 HK Equity).
 - Do not invent a cause or mention companies not found in the headlines. If the headlines lack sector detail, keep it brief rather than hallucinating.
