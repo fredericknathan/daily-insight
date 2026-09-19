@@ -44,7 +44,7 @@ def generate(prompt: str, system: str = "", temperature: float = 0.3) -> str:
             logger.info("Using Groq fallback...")
             client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=groq_token)
             resp = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="llama3-70b-8192",
                 messages=messages,
                 temperature=temperature,
             )

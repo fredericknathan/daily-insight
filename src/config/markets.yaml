@@ -44,7 +44,7 @@ countries:
   news_query: Korea stock market
   tv_symbol: null
 - name: Indonesia
-  index_name: Jakarta Composite (JCI)
+  index_name: Jakarta Composite
   bloomberg: JCI Index
   yahoo: ^JKSE
   stock_exchange_suffix: IJ
@@ -55,7 +55,7 @@ countries:
   news_query: Indonesia stock market
   tv_symbol: TVC-ID10Y
 - name: Singapore
-  index_name: Straits Times Index (STI)
+  index_name: Straits Times Index
   bloomberg: STI Index
   yahoo: ^STI
   stock_exchange_suffix: SP

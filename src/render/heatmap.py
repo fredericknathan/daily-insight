@@ -55,7 +55,8 @@ def render_heatmap(resolved: list[ResolvedSnapshot], countries_cfg: list, out_pa
     # Sort by weight so larger boxes are clustered appropriately by squarify
     valid.sort(key=lambda r: MARKET_WEIGHTS.get(r.country, 1.0), reverse=True)
 
-    sizes = [MARKET_WEIGHTS.get(r.country, 1.0) for r in valid]
+    import math
+    sizes = [math.sqrt(MARKET_WEIGHTS.get(r.country, 1.0)) for r in valid]
     colors = [get_color(r.change_pct) for r in valid]
     
     labels = []
