@@ -14,6 +14,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from datetime import datetime
 
 from src.config.markets_loader import load_config, load_countries
 from src.fetch.primary import fetch_all
@@ -114,10 +115,12 @@ def run():
         raw_exec = generate(subj_prompt, system=EXECUTIVE_SUMMARY_PROMPT, temperature=0.5, json_mode=True)
         exec_summary = json.loads(raw_exec)
         subject_str = exec_summary.get('subject', 'Asian Markets See Broad Volatility Across Key Sectors').strip('\"\'')
-        final_subject = f"Daily Macro Brief — {subject_str}"
+        date_prefix = datetime.now().strftime("%d/%m/%Y")
+        final_subject = f"{date_prefix} Macro Brief — {subject_str}"
     except Exception as e:
         logger.error("Failed to generate executive summary: %s", e)
-        final_subject = f"Daily Macro Brief — {output_countries[0]['name']} Leads Market Volatility Amid Shifting Macro Conditions"
+        date_prefix = datetime.now().strftime("%d/%m/%Y")
+        final_subject = f"{date_prefix} Macro Brief — {output_countries[0]['name']} Leads Market Volatility Amid Shifting Macro Conditions"
         exec_summary = {
             "bullet_1_global_regime": "Global markets traded mixed.",
             "bullet_2_cross_asset": "Cross-asset volatility remains muted.",
