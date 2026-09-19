@@ -99,9 +99,9 @@ def run():
             "stale": snap.stale,
         })
 
-    logger.info("Step 4/5: rendering heatmap")
-    from src.render.heatmap import render_heatmap
-    heatmap_path = render_heatmap(resolved, countries_cfg, str(DATA_DIR / "heatmap.png"))
+    logger.info("Step 4/5: calculating HTML heatmap layout")
+    from src.render.heatmap import generate_heatmap_data
+    heatmap_boxes = generate_heatmap_data(resolved, countries_cfg)
 
     logger.info("Step 5/5: composing + sending + archiving")
     any_fallback = any(r.stale for r in resolved)
@@ -124,11 +124,10 @@ def run():
             "bullet_3_catalysts": "Awaiting further macroeconomic data."
         }
 
-    html = build_email_html(output_countries, any_fallback, exec_summary)
+    html = build_email_html(output_countries, any_fallback, exec_summary, heatmap_boxes)
     send_brief(
         subject=final_subject,
         html_body=html,
-        heatmap_path=heatmap_path,
         to_address=TO_ADDRESS,
     )
     write_daily_snapshot(resolved)

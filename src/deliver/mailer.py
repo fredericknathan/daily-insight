@@ -11,7 +11,7 @@ import smtplib
 import logging
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
+
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +19,9 @@ SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 
 
-from email.mime.image import MIMEImage
 
-def send_brief(subject: str, html_body: str, heatmap_path: str, to_address: str) -> None:
+
+def send_brief(subject: str, html_body: str, to_address: str) -> None:
     sender = os.environ["GMAIL_ADDRESS"]
     password = os.environ["GMAIL_APP_PASSWORD"]
 
@@ -38,12 +38,6 @@ def send_brief(subject: str, html_body: str, heatmap_path: str, to_address: str)
     plaintext = "Your Daily Macro Brief is best viewed in an HTML-capable email client."
     alt.attach(MIMEText(plaintext, "plain"))
     alt.attach(MIMEText(html_body, "html"))
-
-    with open(heatmap_path, "rb") as f:
-        img = MIMEImage(f.read())
-        img.add_header("Content-ID", "<heatmap>")
-        img.add_header("Content-Disposition", "inline", filename="heatmap.png")
-        msg.attach(img)
 
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
         server.starttls()

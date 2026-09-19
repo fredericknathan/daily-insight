@@ -26,7 +26,7 @@ OUTPUT JSON SCHEMA:
   "key_movers": [
     {
       "company": "Company Name",
-      "ticker": "Ticker (e.g., 005930 KS)",
+      "ticker": "The EXACT stock ticker. DO NOT LEAVE BLANK (e.g., 005930 KS, or standard local ticker)",
       "delta": "1D % Change (if explicitly stated in the headlines, else null)",
       "context": "Material catalyst: M&A, verified earnings beat/miss, regulatory ruling. Limit to names driving index attribution."
     }
@@ -68,34 +68,8 @@ def build_executive_prompt(country_jsons: list[str]) -> str:
     lines = ["Here are the structured JSON summaries for today's markets:", ""]
     for s in country_jsons:
         if s and "fallback" not in s:
-
             lines.append(s)
             lines.append("---")
             
     lines.append("\nGenerate the JSON output now.")
-    return "\n".join(lines)
-
-CALENDAR_PROMPT = """You are a macro calendar analyst.
-I am providing you with a raw list of economic events scheduled for the next 24 hours.
-Your job is to synthesize this into a structured JSON list, adding a short 3-6 word "asset_impact" prediction for each event.
-
-JSON SCHEMA:
-{
-  "events": [
-    {
-      "time": "HH:MM (Keep original time string)",
-      "country": "Country",
-      "event": "Event Name",
-      "period": "MoM / YoY / Q / etc. (Infer from event name if possible, else leave blank)",
-      "consensus": "Consensus Value",
-      "prior": "Prior Value",
-      "asset_impact": "Short 3-6 word prediction (e.g. 'USD/JPY volatility', 'Broad risk sentiment', 'Local tech stocks')"
-    }
-  ]
-}
-"""
-
-def build_calendar_prompt(raw_events: list[dict]) -> str:
-    import json
-    lines = ["Here are the upcoming economic events:", json.dumps(raw_events, indent=2), "\nGenerate the JSON output now."]
     return "\n".join(lines)

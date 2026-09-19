@@ -5,10 +5,6 @@ coloured by % change according to standard financial market visual constraints.
 """
 
 from __future__ import annotations
-import matplotlib
-matplotlib.use("Agg")  # headless — no display in CI
-import matplotlib.pyplot as plt
-import squarify
 from src.fetch.resilience import ResolvedSnapshot
 
 # Proxy for "volume" / market size to ensure USA is largest, ID is smaller, etc.
@@ -46,50 +42,27 @@ def get_color(change_pct: float | None, max_abs_change: float) -> str:
         b = int(69 + (230 - 69) * (1 - intensity))
         return f"#{r:02x}{g:02x}{b:02x}"
 
-def render_heatmap(resolved: list[ResolvedSnapshot], countries_cfg: list, out_path: str) -> str:
+def generate_heatmap_data(resolved: list[ResolvedSnapshot], countries_cfg: list) -> list[dict]:
     cfg_by_name = {c.name: c for c in countries_cfg}
     
     valid = [r for r in resolved if r.change_pct is not None]
     if not valid:
-        fig, ax = plt.subplots(figsize=(9, 7))
-        ax.text(0.5, 0.5, "No data available", ha="center", va="center", fontsize=20)
-        ax.axis("off")
-        plt.savefig(out_path, dpi=150, bbox_inches="tight", facecolor="white")
-        plt.close(fig)
-        return out_path
+        return []
 
+    # Sort by weight so larger boxes appear first in the grid
     valid.sort(key=lambda r: MARKET_WEIGHTS.get(r.country, 1.0), reverse=True)
     
-    sizes = [MARKET_WEIGHTS.get(r.country, 1.0) for r in valid]
     max_abs = max((abs(r.change_pct) for r in valid), default=0.0)
-    colors = [get_color(r.change_pct, max_abs) for r in valid]
     
-    labels = []
+    boxes = []
     for r in valid:
         bbg = cfg_by_name[r.country].bloomberg if r.country in cfg_by_name else r.country
-        ticker = bbg.split()[0]  # Just take the ticker part, e.g., 'SPX' from 'SPX Index'
+        ticker = bbg.split()[0]
         
-        stale_marker = " *" if r.stale else ""
-        label = f"{ticker}\n{r.change_pct:+.2f}%{stale_marker}"
-        labels.append(label)
-
-    fig = plt.figure(figsize=(10, 6))
-    ax = fig.add_subplot(111)
-    
-    squarify.plot(
-        sizes=sizes,
-        label=labels,
-        color=colors,
-        alpha=1.0,
-        ax=ax,
-        text_kwargs={'fontsize': 14, 'color': 'white', 'fontweight': 'bold'},
-        edgecolor="white",
-        linewidth=2
-    )
-
-    ax.axis('off')
-    
-    plt.tight_layout(rect=[0, 0, 1, 1])
-    plt.savefig(out_path, dpi=150, bbox_inches="tight", facecolor="white", pad_inches=0.0)
-    plt.close(fig)
-    return out_path
+        boxes.append({
+            "ticker": ticker,
+            "change_pct": f"{r.change_pct:+.2f}%",
+            "color": get_color(r.change_pct, max_abs)
+        })
+        
+    return boxes

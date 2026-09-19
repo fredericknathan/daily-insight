@@ -57,8 +57,13 @@ High-Signal Daily Macro Brief Template
   </div>
 
   <h2>2. Global Equities Heatmap</h2>
-  <div class="heatmap-wrapper">
-    <img src="cid:heatmap" alt="Global Equities Heatmap">
+  <div style="font-size: 0; margin-bottom: 32px; border: 1px solid #e5e7eb; background: #ffffff;">
+    {% for box in heatmap_boxes %}
+    <div style="display: inline-block; width: 25%; box-sizing: border-box; background-color: {{ box.color }}; border: 1px solid #ffffff; padding: 24px 0; text-align: center; vertical-align: top;">
+      <div style="font-size: 14px; font-weight: bold; letter-spacing: 0.5px; color: white;">{{ box.ticker }}</div>
+      <div style="font-size: 12px; font-weight: 500; color: white; margin-top: 4px;">{{ box.change_pct }}</div>
+    </div>
+    {% endfor %}
   </div>
 
   <h2>3. Sovereign Rates & FX Transmission</h2>
@@ -103,7 +108,7 @@ High-Signal Daily Macro Brief Template
   {% for c in countries %}
   {% if c.macro_driver or c.sector_driver %}
   <div class="region-block">
-    <div class="region-header">{{ c.name }} | {{ c.index_name }} ({{ c.ticker }}): {{ "{:,.2f}".format(c.price) if c.price is not none else "-" }} ({% if c.change_pct is not none %}{{ "%+.2f"|format(c.change_pct) }}%{% else %}-{% endif %})</div>
+    <div class="region-header">{{ c.name }} | {{ c.index_name }} ({{ c.ticker }}): {{ "{:,.2f}".format(c.price) if c.price is not none else "-" }} ({% if c.change_pct is not none %}<span class="{% if c.change_pct > 0 %}up{% elif c.change_pct < 0 %}down{% else %}neutral{% endif %}">{{ "%+.2f"|format(c.change_pct) }}%</span>{% else %}-{% endif %})</div>
     <ul class="region-list">
       {% if c.macro_driver %}<li><strong>Macro & Liquidity:</strong> {{ c.macro_driver }}</li>{% endif %}
       {% if c.sector_driver %}<li><strong>Sector Dynamics:</strong> {{ c.sector_driver }}</li>{% endif %}
