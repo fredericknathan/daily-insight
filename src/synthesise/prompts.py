@@ -40,3 +40,27 @@ def build_country_prompt(country_cfg: CountryConfig, snapshot: ResolvedSnapshot)
 
     lines.append("\nWrite the narrative summary now, based on these headlines.")
     return "\n".join(lines)
+
+
+SUBJECT_SYSTEM_PROMPT = """You are writing a short, punchy email subject line for a daily macro market brief.
+Rules:
+- Extremely short (3 to 6 words maximum).
+- Capture the dominant global macro theme based on the provided country summaries.
+- No punctuation at the end.
+- Do not use quotes.
+- Example: Tech Selloff Drags Asian Markets
+- Example: Global Yields Spike on Fed Fears
+"""
+
+def build_subject_prompt(country_summaries: list[str]) -> str:
+    lines = ["Here are the market summaries for today:", ""]
+    for s in country_summaries:
+        if s and "A narrative summary could not be generated" not in s:
+            lines.append(s)
+            lines.append("---")
+    
+    if len(lines) <= 2:
+        return "Write a generic subject line like 'Mixed Global Markets'"
+        
+    lines.append("\nWrite the extremely short subject line now.")
+    return "\n".join(lines)

@@ -20,7 +20,7 @@ from src.fetch.primary import fetch_all
 from src.fetch.resilience import resolve_all, write_daily_snapshot
 from src.fetch.rates import fetch_all_rates
 from src.synthesise.client import generate
-from src.synthesise.prompts import SYSTEM_PROMPT, build_country_prompt
+from src.synthesise.prompts import SYSTEM_PROMPT, build_country_prompt, SUBJECT_SYSTEM_PROMPT, build_subject_prompt
 from src.synthesise.validate import validate_paragraph, fallback_sentence
 from src.synthesise.ticker_format import format_index
 from src.render.heatmap import render_heatmap
@@ -97,9 +97,22 @@ def run():
     render_heatmap(resolved, countries_cfg, heatmap_path)
 
     logger.info("Step 5/5: composing + sending + archiving")
+    
+    # Generate dynamic subject line
+    try:
+        summaries = [c["paragraph"] for c in output_countries]
+        subj_prompt = build_subject_prompt(summaries)
+        generated_subject = generate(subj_prompt, system=SUBJECT_SYSTEM_PROMPT, temperature=0.5)
+        # Strip quotes just in case
+        generated_subject = generated_subject.strip('"\'')
+        final_subject = f"Daily Macro Brief — {generated_subject}"
+    except Exception as e:
+        logger.error("Failed to generate subject line, using fallback: %s", e)
+        final_subject = f"Daily Macro Brief — {output_countries[0]['name']} leads the move"
+
     html = build_email_html(output_countries, any_fallback)
     send_brief(
-        subject=f"Daily Macro Brief — {output_countries[0]['name']} leads the move",
+        subject=final_subject,
         html_body=html,
         heatmap_path=heatmap_path,
         to_address=TO_ADDRESS,
