@@ -123,7 +123,20 @@ def run():
             "bullet_3_catalysts": "Awaiting further macroeconomic data."
         }
 
-    html = build_email_html(output_countries, any_fallback, exec_summary)
+    # Fetch and Process Calendar
+    from src.fetch.calendar import fetch_calendar
+    from src.synthesise.prompts import build_calendar_prompt, CALENDAR_PROMPT
+    calendar_events = []
+    try:
+        raw_events = fetch_calendar([m["name"] for m in countries_raw])
+        if raw_events:
+            cal_prompt = build_calendar_prompt(raw_events)
+            raw_cal_json = generate(cal_prompt, system=CALENDAR_PROMPT, temperature=0.3, json_mode=True)
+            calendar_events = json.loads(raw_cal_json).get("events", [])
+    except Exception as e:
+        logger.error("Failed to generate calendar events: %s", e)
+
+    html = build_email_html(output_countries, any_fallback, exec_summary, calendar_events)
     send_brief(
         subject=final_subject,
         html_body=html,

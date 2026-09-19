@@ -42,7 +42,12 @@ High-Signal Daily Macro Brief Template
 <tr><td>
 <div class="container">
 
-  <h2>Executive Summary: The 30-Second Take</h2>
+  <p style="font-size:12px; color:#6b7280; margin-bottom:8px;">{{ date }}</p>
+  {% if exec_summary.regime %}
+  <p style="font-size:14px; font-weight:bold; color:#111827; margin-bottom:24px; font-style:italic;">"{{ exec_summary.regime }}"</p>
+  {% endif %}
+
+  <h2>1. Executive Summary: The 30-Second Take</h2>
   <div class="exec-summary">
     <ul>
       <li><strong>Global Regime:</strong> {{ exec_summary.bullet_1_global_regime }}</li>
@@ -51,64 +56,61 @@ High-Signal Daily Macro Brief Template
     </ul>
   </div>
 
-  <h2>Cross-Asset Snapshot</h2>
+  <h2>2. Global Equities Heatmap</h2>
+  <div class="heatmap-wrapper">
+    <img src="cid:heatmap" alt="Global Equities Heatmap">
+  </div>
+
+  <h2>3. Sovereign Rates & FX Transmission</h2>
   <table class="snapshot">
     <thead>
       <tr>
-        <th>Index</th>
-        <th>Level</th>
+        <th>Country</th>
+        <th>10Y Sovereign Yield</th>
+        <th>1D Δ</th>
+        <th>Currency Pair</th>
+        <th>FX Spot</th>
         <th>1D %</th>
-        <th>YTD %</th>
-        <th>10Y Yield</th>
-        <th>FX vs USD</th>
       </tr>
     </thead>
     <tbody>
       {% for c in countries %}
       <tr>
-        <td><strong>{{ c.name }}</strong><br><span style="color:#6b7280; font-size:10px;">{{ c.index_name }}</span></td>
-        <td>{{ "{:,.2f}".format(c.price) if c.price is not none else "-" }}</td>
-        
-        {% if c.change_pct is not none %}
-          {% if c.change_pct > 0 %}<td class="up">{{ "%+.2f"|format(c.change_pct) }}%</td>
-          {% elif c.change_pct < 0 %}<td class="down">{{ "%.2f"|format(c.change_pct) }}%</td>
-          {% else %}<td class="neutral">0.00%</td>{% endif %}
-        {% else %}<td>-</td>{% endif %}
-
-        <td>{{ "%+.1f"|format(c.ytd_pct) + "%" if c.ytd_pct is not none else "-" }}</td>
-        
+        <td><strong>{{ c.name }}</strong></td>
+        <td>{{ "%.2f"|format(c.rate_10y_pct) + "%" if c.rate_10y_pct is not none else "-" }}</td>
         <td>
-          {{ "%.2f"|format(c.rate_10y_pct) + "%" if c.rate_10y_pct is not none else "-" }}
           {% if c.rate_10y_bps_change is not none %}
-            <span style="font-size:10px; color:#6b7280;">({{ "%+.0f"|format(c.rate_10y_bps_change) }} bps)</span>
-          {% endif %}
+            {% if c.rate_10y_bps_change > 0 %}<span class="up">+{{ "%.0f"|format(c.rate_10y_bps_change) }} bps</span>
+            {% elif c.rate_10y_bps_change < 0 %}<span class="down">{{ "%.0f"|format(c.rate_10y_bps_change) }} bps</span>
+            {% else %}<span class="neutral">0 bps</span>{% endif %}
+          {% else %}-{% endif %}
         </td>
-        
+        <td><strong>{{ c.currency }}</strong></td>
+        <td>{{ "{:,.4f}".format(c.fx_price) if c.fx_price is not none else "-" }}</td>
         <td>
-          {{ "{:,.4f}".format(c.fx_price) if c.fx_price is not none else "-" }}
           {% if c.fx_change_pct is not none %}
-            {% if c.fx_change_pct > 0 %}<span class="up" style="font-size:10px;">({{ "%+.2f"|format(c.fx_change_pct) }}%)</span>
-            {% elif c.fx_change_pct < 0 %}<span class="down" style="font-size:10px;">({{ "%.2f"|format(c.fx_change_pct) }}%)</span>
-            {% else %}<span class="neutral" style="font-size:10px;">(0.00%)</span>{% endif %}
-          {% endif %}
+            {% if c.fx_change_pct > 0 %}<span class="up">+{{ "%.2f"|format(c.fx_change_pct) }}%</span>
+            {% elif c.fx_change_pct < 0 %}<span class="down">{{ "%.2f"|format(c.fx_change_pct) }}%</span>
+            {% else %}<span class="neutral">0.00%</span>{% endif %}
+          {% else %}-{% endif %}
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 
-  <h2>Regional Themes</h2>
+  <h2>4. Regional Breakdown</h2>
   {% for c in countries %}
   {% if c.macro_driver or c.sector_driver %}
   <div class="region-block">
-    <div class="region-header">{{ c.name }} | {{ c.index_name }}</div>
+    <div class="region-header">{{ c.name }} | {{ c.index_name }}: {{ "{:,.2f}".format(c.price) if c.price is not none else "-" }} ({% if c.change_pct is not none %}{{ "%+.2f"|format(c.change_pct) }}%{% else %}-{% endif %})</div>
     <ul class="region-list">
-      {% if c.macro_driver %}<li><strong>Macro & Flows:</strong> {{ c.macro_driver }}</li>{% endif %}
-      {% if c.sector_driver %}<li><strong>Sector Drivers:</strong> {{ c.sector_driver }}</li>{% endif %}
+      {% if c.macro_driver %}<li><strong>Macro & Liquidity:</strong> {{ c.macro_driver }}</li>{% endif %}
+      {% if c.sector_driver %}<li><strong>Sector Dynamics:</strong> {{ c.sector_driver }}</li>{% endif %}
       {% if c.key_movers and c.key_movers | length > 0 %}
-        <li><strong>Key Movers:</strong>
+        <li><strong>Key Drivers:</strong>
           {% for m in c.key_movers %}
-            <br>&nbsp;&nbsp;• <span class="mover">{{ m.company }}</span>{% if m.delta %} ({{ m.delta }}){% endif %}: {{ m.context }}
+            <br>&nbsp;&nbsp;• <strong>{{ m.company }}{% if m.ticker %} ({{ m.ticker }}){% endif %}</strong>{% if m.delta %}: {{ m.delta }}{% endif %} - {{ m.context }}
           {% endfor %}
         </li>
       {% endif %}
@@ -117,9 +119,35 @@ High-Signal Daily Macro Brief Template
   {% endif %}
   {% endfor %}
 
-  <div class="heatmap-wrapper">
-    <img src="cid:heatmap" alt="Cross-country index heatmap">
-  </div>
+  <h2>5. 24-Hour Catalyst Calendar</h2>
+  {% if calendar_events and calendar_events | length > 0 %}
+  <table class="snapshot">
+    <thead>
+      <tr>
+        <th>Time (EST)</th>
+        <th>Country</th>
+        <th>Event / Indicator</th>
+        <th>Consensus</th>
+        <th>Prior</th>
+        <th>Asset Impact Focus</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ev in calendar_events %}
+      <tr>
+        <td>{{ ev.time }}</td>
+        <td>{{ ev.country }}</td>
+        <td>{{ ev.event }}{% if ev.period %} ({{ ev.period }}){% endif %}</td>
+        <td>{{ ev.consensus }}</td>
+        <td>{{ ev.prior }}</td>
+        <td><em>{{ ev.asset_impact }}</em></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="font-size:13px; color:#6b7280;">No major high-impact catalysts scheduled for the next 24 hours.</p>
+  {% endif %}
 
 </div>
 </td></tr>

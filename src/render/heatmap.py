@@ -24,23 +24,35 @@ MARKET_WEIGHTS = {
     "Vietnam": 0.2,
 }
 
-def get_color(change_pct: float | None) -> str:
-    if change_pct is None:
-        return "#e0e0e0" # N/A
+import math
+
+def get_color(change_pct: float | None, max_abs_change: float) -> str:
+    if change_pct is None or max_abs_change == 0:
+        return "#e0e0e0" # N/A or neutral
+    
+    # Scale from 0.2 to 1.0 based on how close it is to the max move
+    ratio = min(abs(change_pct) / max_abs_change, 1.0)
+    # Ensure minimum saturation so it's clearly colored, scale up to 100%
+    intensity = 0.3 + (0.7 * ratio)
+    
     if change_pct > 0.0:
-        return "#089981" # Bright Lime/Green
-    elif change_pct < 0.0:
-        return "#f23645" # Bright Crimson/Red
+        # Interpolate between light green and bright green
+        r = int(8 + (230 - 8) * (1 - intensity))
+        g = int(153 + (230 - 153) * (1 - intensity))
+        b = int(129 + (230 - 129) * (1 - intensity))
+        return f"#{r:02x}{g:02x}{b:02x}"
     else:
-        return "#d1d5db" # Light Gray
+        # Interpolate between light red and bright red
+        r = int(242 + (242 - 242) * (1 - intensity))
+        g = int(54 + (230 - 54) * (1 - intensity))
+        b = int(69 + (230 - 69) * (1 - intensity))
+        return f"#{r:02x}{g:02x}{b:02x}"
 
 def render_heatmap(resolved: list[ResolvedSnapshot], countries_cfg: list, out_path: str) -> str:
     cfg_by_name = {c.name: c for c in countries_cfg}
     
-    # Filter out unavailable
     valid = [r for r in resolved if r.change_pct is not None]
     if not valid:
-        # Fallback to simple plot if nothing is valid
         fig, ax = plt.subplots(figsize=(9, 7))
         ax.text(0.5, 0.5, "No data available", ha="center", va="center", fontsize=20)
         ax.axis("off")
@@ -48,12 +60,13 @@ def render_heatmap(resolved: list[ResolvedSnapshot], countries_cfg: list, out_pa
         plt.close(fig)
         return out_path
 
-    # Sort by weight so larger boxes are clustered appropriately by squarify
     valid.sort(key=lambda r: MARKET_WEIGHTS.get(r.country, 1.0), reverse=True)
-
-    import math
-    sizes = [math.sqrt(MARKET_WEIGHTS.get(r.country, 1.0)) for r in valid]
-    colors = [get_color(r.change_pct) for r in valid]
+    
+    # Use exact market cap weights for area sizing
+    sizes = [MARKET_WEIGHTS.get(r.country, 1.0) for r in valid]
+    
+    max_abs = max((abs(r.change_pct) for r in valid), default=0.0)
+    colors = [get_color(r.change_pct, max_abs) for r in valid]
     
     labels = []
     for r in valid:
@@ -78,7 +91,7 @@ def render_heatmap(resolved: list[ResolvedSnapshot], countries_cfg: list, out_pa
         linewidth=2
     )
 
-    ax.set_title("Equity Benchmarks (Sized by Approx. Market Cap Root)", fontsize=10, color="#555555", pad=10)
+    ax.set_title("Global Equities Heatmap (Sized by Market Cap)", fontsize=10, color="#555555", pad=10)
     ax.axis('off')
     
     plt.tight_layout(rect=[0, 0, 1, 1])
