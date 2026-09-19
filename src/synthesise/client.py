@@ -19,28 +19,10 @@ def generate(prompt: str, system: str = "", temperature: float = 0.3) -> str:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
 
-    # Try Primary (OpenRouter)
-    openrouter_token = os.environ.get("LLM_API_KEY")
-    if openrouter_token:
-        try:
-            client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=openrouter_token)
-            resp = client.chat.completions.create(
-                model="nvidia/nemotron-3-ultra-550b-a55b:free",
-                messages=messages,
-                temperature=temperature,
-                timeout=15.0
-            )
-            return resp.choices[0].message.content.strip()
-        except Exception as e:
-            logger.error("Primary OpenRouter generation failed: %s", e)
-    else:
-        logger.warning("LLM_API_KEY (OpenRouter) not set, attempting fallback...")
-
-    # Try Fallback 1 (Groq)
+    # Try Primary (Groq)
     groq_token = os.environ.get("GROQ_API_KEY")
     if groq_token:
         try:
-            logger.info("Using Groq fallback...")
             client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=groq_token)
             resp = client.chat.completions.create(
                 model="openai/gpt-oss-120b",
@@ -50,7 +32,25 @@ def generate(prompt: str, system: str = "", temperature: float = 0.3) -> str:
             )
             return resp.choices[0].message.content.strip()
         except Exception as e:
-            logger.error("Groq fallback generation failed: %s", e)
+            logger.error("Primary Groq generation failed: %s", e)
+    else:
+        logger.warning("GROQ_API_KEY not set, attempting fallback...")
+
+    # Try Fallback 1 (OpenRouter)
+    openrouter_token = os.environ.get("LLM_API_KEY")
+    if openrouter_token:
+        try:
+            logger.info("Using OpenRouter fallback...")
+            client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=openrouter_token)
+            resp = client.chat.completions.create(
+                model="nvidia/nemotron-3-ultra-550b-a55b:free",
+                messages=messages,
+                temperature=temperature,
+                timeout=15.0
+            )
+            return resp.choices[0].message.content.strip()
+        except Exception as e:
+            logger.error("OpenRouter fallback generation failed: %s", e)
 
     # Try Fallback 2 (GitHub Models)
     github_token = os.environ.get("GITHUB_TOKEN")
