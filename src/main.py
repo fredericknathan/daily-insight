@@ -85,6 +85,7 @@ def run():
             "name": cfg.name,
             "index_name": cfg.index_name,
             "bloomberg": format_index(cfg.bloomberg),
+            "ticker": cfg.bloomberg.split()[0],
             "currency": cfg.currency,
             "price": snap.price,
             "change_pct": snap.change_pct,

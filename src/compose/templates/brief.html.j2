@@ -72,10 +72,8 @@ High-Signal Daily Macro Brief Template
       <tr>
         <th>Country</th>
         <th>10Y Sovereign Yield</th>
-        <th>1D Δ</th>
         <th>Currency Pair</th>
         <th>FX Spot</th>
-        <th>1D %</th>
       </tr>
     </thead>
     <tbody>
@@ -83,22 +81,8 @@ High-Signal Daily Macro Brief Template
       <tr>
         <td><strong>{{ c.name }}</strong></td>
         <td>{{ "%.2f"|format(c.rate_10y_pct) + "%" if c.rate_10y_pct is not none else "-" }}</td>
-        <td>
-          {% if c.rate_10y_bps_change is not none %}
-            {% if c.rate_10y_bps_change > 0 %}<span class="up">+{{ "%.0f"|format(c.rate_10y_bps_change) }} bps</span>
-            {% elif c.rate_10y_bps_change < 0 %}<span class="down">{{ "%.0f"|format(c.rate_10y_bps_change) }} bps</span>
-            {% else %}<span class="neutral">0 bps</span>{% endif %}
-          {% else %}-{% endif %}
-        </td>
         <td><strong>{{ c.currency }}</strong></td>
-        <td>{{ "{:,.4f}".format(c.fx_price) if c.fx_price is not none else "-" }}</td>
-        <td>
-          {% if c.fx_change_pct is not none %}
-            {% if c.fx_change_pct > 0 %}<span class="up">+{{ "%.2f"|format(c.fx_change_pct) }}%</span>
-            {% elif c.fx_change_pct < 0 %}<span class="down">{{ "%.2f"|format(c.fx_change_pct) }}%</span>
-            {% else %}<span class="neutral">0.00%</span>{% endif %}
-          {% else %}-{% endif %}
-        </td>
+        <td>{{ "{:,.2f}".format(c.fx_price) if c.fx_price is not none else "-" }}</td>
       </tr>
       {% endfor %}
     </tbody>
